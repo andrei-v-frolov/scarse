@@ -1,0 +1,31 @@
+Scarse (Scanner CAlibration ReaSonably Easy)  --  credits
+=========================================================
+
+Developers:
+===========
+
+  -- Andrei Frolov <andrei@phys.ualberta.ca>  -  main coding
+
+
+Acknowledgements:
+=================
+
+This package would never have been written if not for the groundwork
+laid down by many people. I am especially grateful to Graeme W. Gill,
+whose valiant effort in implementing free ICC profile library prompted
+development of this package.
+
+ General code:
+  
+  -- TIFF code based on libtiff & tools by Sam Leffler
+  -- ICC code derived from icclib & examples by Graeme W. Gill
+  -- Color conversion algorithms based on Color Spaces FAQ by David Bourgin
+
+
+Thanks to:
+==========
+
+  -- John Pitney <pitney@uiuc.edu> for his help with debugging
+  -- Alec Jones <alecj@bellsouth.net> for providing MacBeth target data
+  -- Peter Kirchgessner <peter@kirchgessner.net> for writing PPM wrappers
+  -- Scott Eaton <wseaton@mindspring.com> for providing reference scans

@@ -1,0 +1,29 @@
+################################################################
+# Top level Makefile
+################################################################
+
+SHELL = /bin/sh
+
+
+# Targets
+.PHONY: all clean distclean install
+
+all:
+	cd icclib; make
+	cd src; make
+	cd data; make
+
+clean:
+	cd icclib; make clean
+	cd src; make clean
+	cd data; make clean
+
+distclean:
+	cd icclib; make distclean
+	cd src; make distclean
+	cd data; make distclean
+
+install:
+	cd icclib; make install
+	cd src; make install
+	cd data; make install
