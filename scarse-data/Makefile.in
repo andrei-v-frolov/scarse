@@ -1,6 +1,6 @@
 ################################################################
-# $Id: Makefile.in,v 1.1 2000/07/11 05:48:22 andrei Exp $
-# Makefile for Scarse calibration targets
+# $Id: Makefile.in,v 1.2 2000/08/09 02:18:27 andrei Exp $
+# Makefile for Scarse data subdirectory
 ################################################################
 
 SHELL = /bin/sh
@@ -19,7 +19,7 @@ VERSION = $(shell cat ../VERSION)
 
 
 # Targets
-.PHONY: all clean distclean install
+.PHONY: all clean distclean install-targets install-etc install
 
 all:
 
@@ -27,16 +27,28 @@ clean:
 
 distclean: clean
 
-install:
+install-targets:
+	echo "Installing calibration targets..."
 	$(INSTALL) -d $(DATADIR)
 	$(INSTALL) -d $(DATADIR)/targets
 	$(INSTALL) -d $(DATADIR)/targets/faust
 	$(INSTALL) -d $(DATADIR)/targets/kodak
 	$(INSTALL) -d $(DATADIR)/targets/macbeth
 	$(INSTALL) -d $(DATADIR)/targets/misc
-	$(INSTALL) -m 0644 TARGETS $(DATADIR)/targets
-	for FILE in `awk '!/^(#|$$)/ {print $$3;}' TARGETS | sort | uniq`; do \
-		echo "Installing targets/$$FILE"; \
-		$(INSTALL) -m 0644 $$FILE $(DATADIR)/targets/$$FILE; \
-		$(COMPRESS) $(DATADIR)/targets/$$FILE; \
+	$(INSTALL) -m 0644 targets/TARGETS $(DATADIR)/targets
+	for FILE in `awk '!/^(#|$$)/ {print "targets/" $$3;}' targets/TARGETS | sort | uniq`; do \
+		echo "Installing $$FILE"; \
+		$(INSTALL) -m 0644 $$FILE $(DATADIR)/$$FILE; \
+		$(COMPRESS) $(DATADIR)/$$FILE; \
 	done
+
+install-etc:
+	echo "Installing configuration files..."
+	$(INSTALL) -d $(DATADIR)
+	$(INSTALL) -d $(DATADIR)/etc
+	for FILE in etc/*; do \
+		echo "Installing $$FILE"; \
+		$(INSTALL) -m 0644 $$FILE $(DATADIR)/$$FILE; \
+	done
+
+install: all install-targets install-etc
