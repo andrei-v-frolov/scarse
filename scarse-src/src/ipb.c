@@ -1,10 +1,10 @@
-/* $Id: ipb.c,v 1.4 2001/02/15 00:48:04 frolov Exp $ */
+/* $Id: ipb.c,v 1.5 2001/06/01 03:12:19 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
  * ICC profile builder - build profile based on measured data.
  * 
- * Copyright (C) 1999 Scarse Project
+ * Copyright (C) 1999-2001 Scarse Project
  * Distributed under the terms of GNU Public License.
  * 
  * Maintainer: Andrei Frolov <andrei@phys.ualberta.ca>
@@ -64,7 +64,7 @@ char *usage_msg[] = {
 	"		known standards are:",
 	"		    illuminants: D50 (default), D55, D65, D75, D93, A, B, C, E",
 	"		  RGB primaries: 700/525/450nm, EBU, HDTV, P22, Trinitron",
-	"		     RGB spaces: Adobe (default), Apple, ColorMatch, CIE,",
+	"		     RGB spaces: Adobe (default), Apple, Bruce, ColorMatch, CIE,",
 	"		                 NTSC, PAL/SECAM, sRGB, SMPTE-C, WideGamut",
 	"",
 	" Color mapping algorithm options:",
@@ -99,7 +99,7 @@ static double        primaries[4][2];
 static double      media_white_pt[3] = {0.9642, 1.0000, 0.8249};
 static double      media_black_pt[3] = {0.0, 0.0, 0.0};
 
-static FILE        *calibration_data = NULL;
+static FILE *calibration_data_stream = NULL;
 static int                invertible = 1;
 static int                ignore_lut = 0;
 static int               matrix_only = 0;
@@ -118,9 +118,9 @@ static char            *profile = NULL;
 
 
 
-/******************* Transform functions ******************************/
+/******************* Transform data model *****************************/
 
-/* Transform data */
+/* General transform info */
 static int              ins_channels = 0;
 static double              ins_gamma = 1.0;
 static transform             ins2XYZ = NULL,
@@ -131,7 +131,6 @@ static double             outs_gamma = 1.0;
 static transform            outs2XYZ = NULL,
                             XYZ2outs = NULL;
 
-typedef struct { int n; double **data, *fit; } curve;
 
 static int	use_ins_curves = 0,
 		use_outs_curves = 0;
@@ -139,6 +138,17 @@ static int	use_ins_curves = 0,
 static curve	ins_curves[MAXCHANNELS],
 		outs_curves[MAXCHANNELS];
 
+
+static int              use_variance = -1; /* -1=no, 1=in, 0=out */
+static int              var_channels = 0;
+
+static int           calibration_pts = 0;
+static datapt      *calibration_data = NULL;
+
+static int              approx_level = 0;
+
+
+/****** !!! MODIFY !!! *******/
 static int          calibration_data_pts = 0;
 static double	*calibration_data_vector = NULL;
 
@@ -153,7 +163,14 @@ static int	use_higher_order_approximation = 0;
 static double	**P = NULL, **P1 = NULL;
 
 static void	*ELUT = NULL, *ELUT_1 = NULL;
+/****** !!! MODIFY !!! *******/
 
+
+
+
+
+
+/******************* Transform functions ******************************/
 
 /* Translate data through curves */
 void xlate_curve(double in[], double out[], int channels, curve c[])
@@ -164,7 +181,7 @@ void xlate_curve(double in[], double out[], int channels, curve c[])
 		out[i] = lu_curve(c[i].fit, in[i]);
 }
 
-/* Translate data through curves */
+/* Translate data through reverse curves */
 void xlate_curve_1(double in[], double out[], int channels, curve c[])
 {
 	int i;
@@ -293,7 +310,7 @@ void ctransform_1(void *cntx, double out[], double in[])
 void read_curve(FILE *fp, int io, curve *c, char *label)
 {
 	int i;
-	int n = 0, size = 64;
+	int n = 0, v = 0, size = 64;
 	double **m = matrix(3, size);
 	
 	size_t bsize = 128;
@@ -313,7 +330,7 @@ void read_curve(FILE *fp, int io, curve *c, char *label)
 			error("syntax error in curve data");
 		
 		/* small deviations are suspicious */
-		if (fabs(m[2][n]) < 2.5e-4) m[2][n] = 1.0;
+		if (fabs(m[2][n]) < 2.5e-4) m[2][n] = 1.0; else v++;
 		
 		n++;
 	}
@@ -323,12 +340,15 @@ void read_curve(FILE *fp, int io, curve *c, char *label)
 	/* Fit curve data */
 	if (!n) error("No curve data supplied");
 	
-	if (verbose > 1) {
-		if (verbose > 3)
-		    for (i = 0; i < n; i++)
-			fprintf(stderr, "\t\t%12.10g %12.10g \t(%12.10g)\n",
-				m[0][i], m[1][i], m[2][i]);
+	if (verbose > 4) {
+		for (i = 0; i < n; i++)
+			if (!v) fprintf(stderr, "\t\t%12.10g %12.10g\n", m[0][i], m[1][i]);
+			else    fprintf(stderr, "\t\t%12.10g %12.10g \t(%12.10g)\n", m[0][i], m[1][i], m[2][i]);
 		
+		if (v && v!=n) fprintf(stderr, "\t\t%26s\t(%i point%s reset)\n", "", n-v, n-v > 1 ? "s" : "");
+	}
+	
+	if (verbose > 1) {
 		fprintf(stderr, "\t%i points, fitting curve...", n);
 		fflush(stderr);
 	}
@@ -377,26 +397,43 @@ void read_curve(FILE *fp, int io, curve *c, char *label)
 			y2[i] = y[i] + 3.0*m[2][i];
 		}
 		cpgsci(3); cpgpt(n, x, y, 9);
-		cpgerry(n, x, y1, y2, 1.0);
+		if (v) cpgerry(n, x, y1, y2, 1.0);
 		
 		#undef PTS
 	}
 	#endif /* PGPLOT */
 }
 
+
+
+
+
+#warning !!! The mess starts here !!!
+
 /* Read LUT data */
-void read_lut(FILE *fp, void **part, void **ipart)
+	void robust_linear_fit(double **data, int n, double M[3][3]);
+void read_lut(FILE *fp)
 {
-	int i, j;
-	int n = 0, size = 64, cdp = 0, cdsize = 64;
-	double **m = matrix(6, size), **im, *cdv = vector(cdsize);
+	int i;
+	char *p, *q;
+	int n = 0, v = 0, size = 64;
+	datapt *data = (datapt *)xmalloc(size*sizeof(datapt));
 	
 	size_t bsize = 128;
-	char *label, *p, *np;
 	char *buffer = (char *)xmalloc(bsize);
-	double ip[MAXCHANNELS], op[MAXCHANNELS], tp[MAXCHANNELS];
-	double e = 0.0, dE[3] = {0.0 /* max */, HUGE /* min */, 0.0 /* avg */};
 	
+	
+	/* What variance data applies to? */
+	switch (class) {
+		case icSigInputClass:
+			use_variance = 1; var_channels = ins_channels; break;
+		case icSigOutputClass:
+		case icSigDisplayClass:
+			/* variance not handled yet */
+			use_variance = -1; var_channels = 0; break;
+		default:
+			use_variance = -1; var_channels = 0;
+	}
 	
 	/* Read LUT data */
 	while (getline(&buffer, &bsize, fp) != -1) {
@@ -404,34 +441,92 @@ void read_lut(FILE *fp, void **part, void **ipart)
 		if (*buffer == ';') break;
 		if (ignore_lut) continue;
 		
-		/* Read data */
-		sscanf(buffer, "%as %n", &label, &i);
-		p = buffer + i; np = NULL;
+		/* initialize data structure */
+		if (n >= size)
+			data = (datapt *)xrealloc(data, (size <<= 1)*sizeof(datapt));
+		
+		data[n].flag = 0; data[n].label = NULL;
+		
+		for (i = 0; i < MAXCHANNELS; i++)
+			data[n].in[i] = data[n].out[i] = data[n].var[i] = 0.0;
+		
+		/* read data */
+		if (sscanf(buffer, "%as %n", &(data[n].label), &i) < 1)
+			error("syntax error in lut data");
+		p = buffer + i; q = NULL;
 		
 		for (i = 0; i < ins_channels; i++) {
-			ip[i] = strtod(p, &np);
-			if (p == np)
-				error("syntax error in lut data");
-			p = np;
-			
-			/* Tuck a copy away for later */
-			if (cdp >= cdsize)
-				cdv = grow_vector(cdv, cdsize <<= 1);
-			cdv[cdp++] = ip[i];
+			data[n].in[i] = strtod(p, &q);
+			if (p == q) error("syntax error in lut data"); else p = q;
 		}
 		
 		for (i = 0; i < outs_channels; i++) {
-			op[i] = strtod(p, &np);
-			if (p == np)
-				error("syntax error in lut data");
-			p = np;
-			
-			/* Tuck a copy away for later */
-			if (cdp >= cdsize)
-				cdv = grow_vector(cdv, cdsize <<= 1);
-			cdv[cdp++] = op[i];
+			data[n].out[i] = strtod(p, &q);
+			if (p == q) error("syntax error in lut data"); else p = q;
 		}
 		
+		for (i = 0; i < var_channels; i++) {
+			data[n].var[i] = strtod(p, &q); p = q;
+			/* small deviations are suspicious */
+			if (fabs(data[n].var[i]) < 2.5e-4) data[n].var[i] = 1.0; else v++;
+		}
+		
+		n++;
+	}
+	free(buffer); if (ignore_lut) return;
+	
+	
+	
+#if 0
+	/* Fit calibration data */
+	if (!n) error("No curve data supplied");
+	if (!v) use_variance = -1;
+	
+	k = 0;
+	m = matrix(n, 9);
+	
+	for (i = 0; i < n; i++) if (!data[i].flag) {
+		outcurves(NULL, m[i], data[i].XYZ);
+		incurves(NULL, &(m[i][3]), data[i].RGB);
+		for(j=3; j<6; j++) m[i][j+3] = data[i].RGB[j];
+		k++;
+	}
+	
+	robust_linear_fit(m, k, M);
+	
+	
+	/* Plot curve fit and data */
+	#ifdef PGPLOT
+	{
+		int k;
+		double t[3];
+		#define PTS 512
+		float x[PTS], y[PTS];
+		
+		/* frame and labels */
+		cpgsci(5); cpgenv(0.0, 1.0, 0.0, 1.0, 1, 1);
+		cpglab("(target)", "(sample)", "XXX");
+		
+		/* data points and error bars */
+		for (i = 0; i < 3; i++) {
+			for (j = 0; j < n; j++) {
+				apply33(M, m[j], t); x[j] = t[i];
+				//x[j] = m[j][i];
+				y[j] = m[j][i+3];
+			}
+			cpgsci(2+i); cpgpt(n, x, y, 0);
+		}
+		
+		#undef PTS
+	}
+	#endif /* PGPLOT */
+	
+	
+	
+	#ifdef XXX
+	double e = 0.0, dE[3] = {0.0 /* max */, HUGE /* min */, 0.0 /* avg */};
+	
+	
 		#warning DO GAMUT CHECK
 		/* Check that the data point is inside gamut constraints 
 		if ((ins_gamut_constrained && !in_gamut(ins, ins_gamut, ip)) ||
@@ -579,33 +674,8 @@ void read_lut(FILE *fp, void **part, void **ipart)
 	free(buffer);
 	
 	
-	/* Plot curve fit and data */
-	#ifdef PGPLOT
-	{
-		int k;
-		#define PTS 512
-		float x[PTS], y[PTS];
-		
-		/* frame and labels */
-		cpgsci(5); cpgenv(0.0, 1.0, 0.0, 1.0, 1, 1);
-		cpglab("(target)", "(sample)", "XXX");
-		
-		/* data points and error bars */
-		for (k = 0; k < 3; k++) {
-			for (i = 0, j = 0; j < cdp; i++, j += 6) {
-				incurves(NULL, ip, &(cdv[j]));
-				outcurves_1_expanded(NULL, op, &(cdv[j+3]));
-				ctransform_1(NULL, tp, op);
-				
-				x[i] = tp[k];
-				y[i] = ip[k];
-			}
-			cpgsci(2+k); cpgpt(i, x, y, 0);
-		}
-		
-		#undef PTS
-	}
-	#endif /* PGPLOT */
+	#endif
+#endif
 }
 
 
@@ -666,7 +736,7 @@ void read_calibration_data(FILE *fp)
 				else fflush(stderr);
 			}
 			
-			read_lut(fp, &ELUT, &ELUT_1);
+			read_lut(fp);
 		}
 	}
 	
@@ -1060,8 +1130,8 @@ int main(int argc, char *argv[])
 	char c;
 	
 	/* Set default primaries */
-	LookupPrimaries("Adobe", primaries);
-	LookupPrimaries("D50", primaries);
+	LookupPrimaries("Adobe", primaries, NULL);
+	LookupPrimaries("D50", primaries, NULL);
 	
 	/* Parse options */
 	while ((c = getopt(argc, argv, "hv-:c:i:o:p:C:UE:MLm:d:r:b:s:")) != -1)
@@ -1130,7 +1200,7 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'p':				/* Primaries */
-			if (!LookupPrimaries(optarg, primaries)) {
+			if (!LookupPrimaries(optarg, primaries, NULL)) {
 				double x, y;
 				char *s = strchr(optarg, ':');
 				
@@ -1164,7 +1234,7 @@ int main(int argc, char *argv[])
 	
 	/* Color mapping algorithm options */
 		case 'C':				/* Calibration data */
-			calibration_data = xfetch(NULL, optarg, "r");
+			calibration_data_stream = xfetch(NULL, optarg, "r");
 			break;
 		case 'U':				/* Unidirectional */
 			invertible = 0;
@@ -1235,8 +1305,8 @@ int main(int argc, char *argv[])
 	
 	
 	/* Read in calibration data if available */
-	if (calibration_data)
-		read_calibration_data(calibration_data);
+	if (calibration_data_stream)
+		read_calibration_data(calibration_data_stream);
 	
 	
 	/* Build profile */
