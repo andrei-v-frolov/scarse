@@ -1,4 +1,4 @@
-/* $Id: calibrate.c,v 1.3 2001/02/05 03:59:39 frolov Exp $ */
+/* $Id: calibrate.c,v 1.4 2001/05/31 21:39:33 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -154,8 +154,8 @@ int main(int argc, char *argv[])
 	{
 		double primaries[4][2];
 		
-		LookupPrimaries("Adobe", primaries);
-		LookupPrimaries("D50", primaries);
+		LookupPrimaries("Adobe", primaries, NULL);
+		LookupPrimaries("D50", primaries, NULL);
 		SetPrimaries(primaries);
 	}
 	

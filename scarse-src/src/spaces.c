@@ -1,4 +1,4 @@
-/* $Id: spaces.c,v 1.3 2001/05/08 23:33:09 frolov Exp $ */
+/* $Id: spaces.c,v 1.4 2001/05/31 21:39:33 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -274,42 +274,42 @@ static const double Trini[6] = {
 };
 
 /* Index of standard illuminants, primaries and color spaces */
-static struct { char *label; const double *wpt, *rgb; } primaries_idx[] = {
+static struct { char *label; const double *wpt, *rgb, g; } primaries_idx[] = {
 	/* Standard illuminants */
-	{"D50",			D50,	NULL},
-	{"D55",			D55,	NULL},
-	{"D65",			D65,	NULL},
-	{"D75",			D75,	NULL},
-	{"D93",			D93,	NULL},
-	{"A",			IlA,	NULL},
-	{"B",			IlB,	NULL},
-	{"C",			IlC,	NULL},
-	{"E",			IlE,	NULL},
+	{"D50",			D50,	NULL,	0.0},
+	{"D55",			D55,	NULL,	0.0},
+	{"D65",			D65,	NULL,	0.0},
+	{"D75",			D75,	NULL,	0.0},
+	{"D93",			D93,	NULL,	0.0},
+	{"A",			IlA,	NULL,	0.0},
+	{"B",			IlB,	NULL,	0.0},
+	{"C",			IlC,	NULL,	0.0},
+	{"E",			IlE,	NULL,	0.0},
 	
 	/* Standard RGB primaries */
-	{"700/525/450nm",	NULL,	WideG},
-	{"EBU",			NULL,	EBU},
-	{"HDTV",		NULL,	HDTV},
-	{"P22",			NULL,	P22},
-	{"Trinitron",		NULL,	Trini},
+	{"700/525/450nm",	NULL,	WideG,	0.0},
+	{"EBU",			NULL,	EBU,	0.0},
+	{"HDTV",		NULL,	HDTV,	0.0},
+	{"P22",			NULL,	P22,	0.0},
+	{"Trinitron",		NULL,	Trini,	0.0},
 	
 	/* Standard RGB spaces */
-	{"Adobe",		D65,	Adobe},
-	{"Apple",		D65,	Trini},
-	{"Bruce",		D65,	Bruce},
-	{"ColorMatch",		D50,	P22},
-	{"CIE",			IlE,	CIE},
-	{"NTSC",		IlC,	NTSC},
-	{"PAL/SECAM",		D65,	EBU},
-	{"sRGB",		D65,	HDTV},
-	{"SMPTE-C",		D65,	SMPTE},
-	{"WideGamut",		D50,	WideG},
+	{"Adobe",		D65,	Adobe,	2.2},
+	{"Apple",		D65,	Trini,	1.8},
+	{"Bruce",		D65,	Bruce,	2.2},
+	{"ColorMatch",		D50,	P22,	1.8},
+	{"CIE",			IlE,	CIE,	2.2},
+	{"NTSC",		IlC,	NTSC,	2.2},
+	{"PAL/SECAM",		D65,	EBU,	2.2},
+	{"sRGB",		D65,	HDTV,	2.2},
+	{"SMPTE-C",		D65,	SMPTE,	2.2},
+	{"WideGamut",		D50,	WideG,	2.2},
 	NULL
 };
 
 
 /* Copy illuminant and RGB primaries from array */
-int LookupPrimaries(char *p, double dest[4][2])
+int LookupPrimaries(char *p, double dest[4][2], double *gamma)
 {
 	int i;
 	
@@ -328,6 +328,10 @@ int LookupPrimaries(char *p, double dest[4][2])
 			dest[2][1] = primaries_idx[i].rgb[3];
 			dest[3][0] = primaries_idx[i].rgb[4];
 			dest[3][1] = primaries_idx[i].rgb[5];
+		}
+		
+		if (primaries_idx[i].g > 0.0) {	/* default RGB gamma */
+			if (gamma) *gamma = primaries_idx[i].g;
 		}
 		
 		return 1;
