@@ -1,0 +1,42 @@
+################################################################
+# $Id: Makefile.in,v 1.1 2000/07/11 05:48:22 andrei Exp $
+# Makefile for Scarse calibration targets
+################################################################
+
+SHELL = /bin/sh
+
+PREFIX  = /usr/local
+
+BINDIR  = $(PREFIX)/bin
+LIBDIR  = $(PREFIX)/lib
+DATADIR = $(PREFIX)/share/cms
+
+
+INSTALL = install
+COMPRESS = gzip -9
+
+VERSION = $(shell cat ../VERSION)
+
+
+# Targets
+.PHONY: all clean distclean install
+
+all:
+
+clean:
+
+distclean: clean
+
+install:
+	$(INSTALL) -d $(DATADIR)
+	$(INSTALL) -d $(DATADIR)/targets
+	$(INSTALL) -d $(DATADIR)/targets/faust
+	$(INSTALL) -d $(DATADIR)/targets/kodak
+	$(INSTALL) -d $(DATADIR)/targets/macbeth
+	$(INSTALL) -d $(DATADIR)/targets/misc
+	$(INSTALL) -m 0644 TARGETS $(DATADIR)/targets
+	for FILE in `awk '!/^(#|$$)/ {print $$3;}' TARGETS | sort | uniq`; do \
+		echo "Installing targets/$$FILE"; \
+		$(INSTALL) -m 0644 $$FILE $(DATADIR)/targets/$$FILE; \
+		$(COMPRESS) $(DATADIR)/targets/$$FILE; \
+	done

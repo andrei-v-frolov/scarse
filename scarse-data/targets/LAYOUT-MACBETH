@@ -1,0 +1,20 @@
+IT8.7/Layout
+ORIGINATOR "Scarse project"
+DESCRIPTOR "Macbeth Color Checker layout"
+CREATED "May 18, 2000"
+BEGIN_LAYOUT
+NUMBER_OF_ROWS 4
+NUMBER_OF_COLUMNS 6
+# ROW_SPAN defaults to all 1's
+# COLUMN_SPAN defaults to all 1's
+
+LAYOUT_TABLE
+ A1   A2   A3   A4   A5   A6
+ B1   B2   B3   B4   B5   B6
+ C1   C2   C3   C4   C5   C6
+GS1  GS2  GS3  GS4  GS5  GS6
+
+# Grayscale data, ordered Dmin to Dmax
+GRAYSCALE_STEPS 6
+GRAYSCALE GS1 GS2 GS3 GS4 GS5 GS6
+END_LAYOUT
