@@ -1,4 +1,4 @@
-/* $Id: targets.c,v 1.2 2001/01/27 01:42:49 frolov Exp $ */
+/* $Id: targets.c,v 1.3 2001/01/28 02:23:20 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -796,18 +796,19 @@ void read_IT87_target(target *tg, char *file, char *geometry)
 		tg->data[i].RGB[1] = avg(pxls[i], data[i][1]);
 		tg->data[i].RGB[2] = avg(pxls[i], data[i][2]);
 		
-		deviation = 0.0;
+		/* Deviations */
+		tg->data[i].RGB[3] = stddev(pxls[i], data[i][0], tg->data[i].RGB[0]);
+		tg->data[i].RGB[4] = stddev(pxls[i], data[i][1], tg->data[i].RGB[1]);
+		tg->data[i].RGB[5] = stddev(pxls[i], data[i][2], tg->data[i].RGB[2]);
 		
-		for (j = 0; j < pxls[i]; j++) {
-			deviation += fabs(data[i][0][j] - tg->data[i].RGB[0]);
-			deviation += fabs(data[i][1][j] - tg->data[i].RGB[1]);
-			deviation += fabs(data[i][2][j] - tg->data[i].RGB[2]);
-		}
-		
-		deviation = deviation / pxls[i] / 3.0;
+		deviation = sqrt( (
+			tg->data[i].RGB[3] * tg->data[i].RGB[3] +
+			tg->data[i].RGB[4] * tg->data[i].RGB[4] +
+			tg->data[i].RGB[5] * tg->data[i].RGB[5])/3.0
+		);
 		
 		if (deviation > 0.05)
-			warning("%s: Fluctuations are big in box %s (ADev = %4.3g)",
+			warning("%s: Fluctuations are big in box %s (SDev = %4.3g)",
 				img->file, tg->data[i].label, deviation);
 		
 		free_matrix(data[i]);

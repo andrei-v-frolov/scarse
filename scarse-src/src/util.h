@@ -1,4 +1,4 @@
-/* $Id: util.h,v 1.1 2001/01/26 22:45:32 frolov Exp $ */
+/* $Id: util.h,v 1.2 2001/01/28 02:23:20 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -68,6 +68,8 @@ double seln(unsigned long k, unsigned long n, double arr[]);
 double avg(unsigned long n, double arr[]);
 double mean(unsigned long n, double arr[]);
 double median(unsigned long n, double arr[]);
+double stddev(unsigned long n, double arr[], double x);
+double absdev(unsigned long n, double arr[], double x);
 
 
 /* 3x3 matrix operations (matrix.c) */

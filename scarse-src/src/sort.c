@@ -1,4 +1,4 @@
-/* $Id: sort.c,v 1.1 2001/01/26 22:45:31 frolov Exp $ */
+/* $Id: sort.c,v 1.2 2001/01/28 02:23:20 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -11,7 +11,11 @@
  * 
  */
 
+#include <math.h>
 #include "util.h"
+
+
+/**********************************************************************/
 
 #define WORTHY 16
 
@@ -261,6 +265,8 @@ double seln(unsigned long r, unsigned long n, double arr[])
 
 
 
+/**********************************************************************/
+
 /* Return average of median-filtered values in array */
 double avg(unsigned long n, double arr[])
 {
@@ -290,4 +296,26 @@ double mean(unsigned long n, double arr[])
 double median(unsigned long n, double arr[])
 {
 	return seln(n/2, n, arr);
+}
+
+/* Return standard deviation */
+double stddev(unsigned long n, double arr[], double x)
+{
+	double S = 0.0;
+	unsigned long i;
+	
+	for (i = 0; i < n; i++) S += (arr[i] - x) * (arr[i] - x);
+	
+	return sqrt(S/(double)(n-1));
+}
+
+/* Return absolute deviation */
+double absdev(unsigned long n, double arr[], double x)
+{
+	double S = 0.0;
+	unsigned long i;
+	
+	for (i = 0; i < n; i++) S += fabs(arr[i] - x);
+	
+	return S/(double)(n);
 }

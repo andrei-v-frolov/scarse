@@ -1,4 +1,4 @@
-/* $Id: scarse.h,v 1.1 2001/01/26 22:45:31 frolov Exp $ */
+/* $Id: scarse.h,v 1.2 2001/01/28 02:23:20 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -28,7 +28,7 @@
 
 typedef struct {
 	int pts;
-	struct _target_data { char *label; double RGB[3], XYZ[3]; } *data;
+	struct _target_data { char *label; double RGB[6], XYZ[3]; } *data;
 	int rows, cols, **layout;
 	int subrows, *subridx;
 	int subcols, *subcidx;
