@@ -1,4 +1,4 @@
-/* $Id: spaces.c,v 1.2 2001/02/05 01:21:44 frolov Exp $ */
+/* $Id: spaces.c,v 1.3 2001/05/08 23:33:09 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -232,6 +232,11 @@ static const double Adobe[6] = {
 	0.2100, 0.7100,
 	0.1500, 0.0600
 };
+static const double Bruce[6] = {
+	0.6400, 0.3300,
+	0.2800, 0.6500,
+	0.1500, 0.0600
+};
 static const double CIE[6] = {
 	0.7350, 0.2650,
 	0.2740, 0.7170,
@@ -291,6 +296,7 @@ static struct { char *label; const double *wpt, *rgb; } primaries_idx[] = {
 	/* Standard RGB spaces */
 	{"Adobe",		D65,	Adobe},
 	{"Apple",		D65,	Trini},
+	{"Bruce",		D65,	Bruce},
 	{"ColorMatch",		D50,	P22},
 	{"CIE",			IlE,	CIE},
 	{"NTSC",		IlC,	NTSC},
