@@ -1,4 +1,4 @@
-/* $Id: targets.c,v 1.4 2001/02/02 20:53:41 frolov Exp $ */
+/* $Id: targets.c,v 1.5 2001/02/27 04:00:53 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -784,7 +784,6 @@ void read_IT87_target(target *tg, char *file, char *geometry)
 	
 	free_vector(xidx);
 	free_vector(yidx);
-	IMG_Close(img);
 	
 	
 	/* Process target data */
@@ -817,4 +816,6 @@ void read_IT87_target(target *tg, char *file, char *geometry)
 	free_vector(pxls);
 	free_vector(size);
 	free(data);
+	
+	IMG_Close(img);
 }
