@@ -1,4 +1,4 @@
-/* $Id: targets.c,v 1.1 2001/01/26 22:45:31 frolov Exp $ */
+/* $Id: targets.c,v 1.2 2001/01/27 01:42:49 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -112,7 +112,7 @@ static ParserState state = UNDEF;
 /* Input stream */
 static char token[65];
 static char *it87file = "";
-static FILE *source = stdin;
+static FILE *source = NULL;
 
 /* IT8.7 data */
 static char        *orig = NULL;

@@ -1,4 +1,4 @@
-/* $Id: interp.c,v 1.1 2001/01/26 22:45:31 frolov Exp $ */
+/* $Id: interp.c,v 1.2 2001/01/27 01:42:48 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -226,7 +226,7 @@ void *subdivide(double **m, int n)
 			break;
 		}
 		
-		if (j >= ns) error("Point (%g, %g, %g) outside a simplex in subdivide()", m[0][i], m[1][i], m[2][i]);
+		if (j >= ns) warning("Point (%g, %g, %g) outside a simplex in subdivide()", m[0][i], m[1][i], m[2][i]);
 	}
 	
 	/* Store info in partition table */
