@@ -1,0 +1,26 @@
+Scarse (Scanner CAlibration ReaSonably Easy)  --  change log
+============================================================
+
+Version 0.2-alpha
+  ** Added support for Kodak Q13, Q14 and similar grayscale targets
+  ** Added support for Gretag-MacBeth Color Checker calibration target
+  ** Profile generation algorithm changes in ipb:
+      - default PCS changed to XYZ (from Lab)
+      - default rendering intent changed to perceptual
+      - added best linear fit to calibration data stage
+      - matrix-based profiles are now generated as well
+      - interpolation changed to linear - actually works now
+      - two options, -L and -M, added to control profile creation
+  ** Fixed embarassing typo in spaces.c which screwed up blue primary
+  ** Numerics rewritten to break free from any existing copyrights
+  ** linalg.c no longer used, removed from distribution
+  ** Use system random number generator instead of ran2.c
+  ** Consistency check bug found (and fixed) in icclib
+  ** Fixed degenerate calibration data handling in ipb
+  ** Various code speedups
+
+Version 0.1-alpha
+  ** First public release
+  ** Translation through profiles is working
+  ** ICC profile builder is working
+  ** Scanner calibration is working

@@ -1,0 +1,28 @@
+Scarse (Scanner CAlibration ReaSonably Easy)  --  installation
+==============================================================
+
+Quick installation notes:
+=========================
+
+This is a first alpha release, so it is rough around the edges.
+Not everything is automated, or working smoothly for that matter,
+so you will have to exercise discretion.
+
+
+To compile:
+===========
+
+Edit makefiles to suit your machine, then do 'make' in the top
+directory. This will make icclib and scarse binaries. By default,
+icclib is compiled and linked to as a shared library. You might
+have to rerun 'ldconfig' after it is installed to make ld.so find
+it.
+
+
+To install:
+===========
+
+Do 'make install' in the top directory. This will install icclib
+and scarse binaries into directory specified by $(PREFIX) variable
+in makefiles. No additional data files are required for operation,
+all calibration target data is precompiled into binaries.

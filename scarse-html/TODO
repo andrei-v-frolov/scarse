@@ -1,0 +1,21 @@
+Scarse (Scanner CAlibration ReaSonably Easy)  --  to do list
+============================================================
+
+To do next:
+===========
+
+  -- Add color negative film calibration support
+  -- Add display and printer calibration support
+  -- Write GUI frontend to calibrate (using Gtk) - any takers?
+  -- Implement profile embedding support in cmap
+  -- Write some image tweaking tools (contrast & unsharp masks, etc)
+  -- Update makefiles to use GNU Autoconf
+  -- Write up documentation
+
+
+To do sometime:
+===============
+
+  -- Make cmap and calibrate into Gimp plugins
+     (this would have to wait until Gimp supports different color
+      spaces and more than 8 bits/channel)

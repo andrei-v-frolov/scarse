@@ -1,0 +1,171 @@
+<HTML><HEAD><TITLE>Scarse Home Page</TITLE></HEAD>
+
+<META NAME="description" CONTENT="scanner calibration software for
+high-end film and flatbed scanners">
+
+<META NAME="keywords" CONTENT="scanning, digital, color management,
+calibration, photography, film, slide">
+
+<BODY BGCOLOR=white TEXT=black>
+
+<P ALIGN=right>[
+  <A HREF="/db/news/scarse">What's New?</A> |
+  <A HREF="/db/search/scarse">Search</A> |
+  <A HREF="index.html#links">Links</A>
+]
+
+<H1 ALIGN=center>
+<FONT SIZE=+2>SCARSE:</FONT><BR>
+Scanner CAlibration ReaSonably Easy</H1>
+
+<P><HR>
+<H3>Call for developers/testers!</H3>
+
+<IMG SRC="/icons/atwork.gif" ALIGN=left HSPACE=16 ALT="">
+
+Scarse project is currently <EM>under development</EM>. Beta-testers
+and developers are sorely needed. I cannot do everything myself, I have
+a day job :). If you interested and want to help, please contact me. My
+email is all over this pages.
+<BR CLEAR=left><HR>
+
+<H3><FONT COLOR=red>Newsflash!</FONT></H3>
+
+<B>02/11/1999</B>: Scarse <A HREF="released/scarse-0.2-alpha.tar.gz">version 0.2-alpha</A>
+released (read more on <A HREF="/db/news/scarse">Scarse news page</A>).
+Features new to 0.2 release:
+<UL>
+  <LI>Improved color correction - check updated <A HREF="images/">comparison images</A>
+  <LI>All common calibration targets (Q60, Q13, Q14 and MacBeth) are now supported
+  <LI>Generates better and smaller profiles, runs faster too
+  <LI>Various bugs fixed
+</UL>
+<HR>
+
+<H3>What is it?</H3>
+
+<P>
+Scarse project was born out of my desire to be able to get good scans
+which are consistent across large batches, and do it with minimal
+amount of manual tweaking. It is intended for serious photographic
+applications, and is most useful with high-end film scanners. If you
+just want to occasionally scan a snapshot of your aunt on your $100
+flatbed and don't care about the colors as long as they are snappy,
+don't bother, this package is not for you.
+
+<P> As the name implies, color management issues are rarely addressed
+in the free software world, probably because until now good scanner
+hardware was unaffordable to a mere mortal. However, for everything
+there is a first, and I am proud to announce the first free scanner
+calibration software available to the public, Scarse.
+
+<P>
+Scarse is developed for Unix machines and is distributed under the
+terms of <A HREF="COPYING">GNU Public License</A>.
+
+<P>
+Right now, the Scarse is at early development stages, and is not as
+polished as commercial systems are. Indeed, it is quite rough and even
+downright inconvenient in places. However, it is quite functional
+already, and produces transparency scans which are <A
+HREF="images/">easily superior</A> to what I get from commercial
+Polaroid SprintScan 4000 drivers (using the same hardware). Those of
+you who are used to super-saturated output of typical consumer scanners
+might be disappointed with Scarse scans, but what they lack in visual
+punch, they more than make up in subtleness.
+
+So if you are adventurous type, give it a try, and tell me what you
+think...
+
+
+<H3>How does it work?</H3>
+
+<P>
+It works quite well, thank you :). Oh, you meant technical details :)?
+
+<P>
+Scarse works by comparing the scan of a hardcopy reference calibration
+target (such as <A HREF="q60tech.pdf">Kodak Q60</A>) coming from your
+hardware to the actual colors the target is supposed to have. It then
+builds (by interpolation) lookup tables that take into account the
+measured scanner hardware peculiarities. Using thus generated profile,
+you can then get scans with color rendition (more or less :)
+independent of the particular hardware used.
+
+<P>
+You will need supported hardcopy calibration target. Kodak Q60 target
+offers a lot of color points to measure and thus produces quite precise
+profiles. It is <A HREF="q60order.pdf">available from Kodak</A> in 35mm
+and 4x5 transparency, as well as 5x7 reflective formats. Other standard
+calibration targets, such as Kodak Color Separation Guide Q13 & Q14, and
+MacBeth Color Checker are also supported starting from version 0.2.
+Scans from negatives are not directly supported yet (but you can include
+MacBeth Color Checker in one of the frames and generate profile from
+that).
+
+
+<H3>Where do I find it?</H3>
+
+<P>You have found it!
+
+<P>
+Latest release of Scarse is
+<A HREF="released/scarse-0.2-alpha.tar.gz">0.2-alpha</A>, earlier
+releases are available <A HREF="released/">here</A>. Or upgrade from
+0.1-alpha using <A HREF="released/scarse-0.2-alpha.patch.gz">this patch</A>.
+
+<P>
+For additional info check out this documentation:
+
+<UL>
+  <LI><A HREF="CHANGES">Change log</A>
+  <LI><A HREF="CREDITS">Credits</A>
+  <LI><A HREF="README">README file</A>, along with geometry specification <A HREF="geometry.html">explanation</A>
+  <LI><A HREF="INSTALL">Installation notes</A>
+  <LI><A HREF="TODO">Official to do list</A>
+  
+  <P>
+  <LI>If you wish to see some feature implemented, email me or leave a note on
+  <A HREF="/db/comments/scarse/wishlist">Scarse wishlist</A>.
+</UL>
+
+
+<A NAME="links"><H3>Links</H3></A>
+
+You might find the following links useful:
+
+<UL>
+    <LI><A HREF="http://www.gimp.org/" TARGET="_top">The GIMP Home Page</A>
+    <LI><A HREF="http://www.XCF.Berkeley.EDU/~gimp/gimp.html" TARGET="_top">The GIMP: an overview</A>
+    <LI><A HREF="http://gimp.foebud.org/registry/" TARGET="_top">GIMP Plug-In Registry</A>
+    <LI><A HREF="http://www.mostang.com/sane/" TARGET="_top">SANE Home Page</A>
+    <LI><A HREF="/photo/calibrate" TARGET="_top">Adjust your monitor</A>
+    
+    <P>
+    <LI><A HREF="http://www.inforamp.net/~poynton/ColorFAQ.html" TARGET="_top">Color spaces FAQ</A>
+    <LI><A HREF="http://www.cs.rit.edu/~ncs/color/t_convert.html" TARGET="_top">Color Conversion Algorithms</A>
+    <LI><A HREF="http://www.linocolor.com/colorman/colorman_frames.htm" TARGET="_top">Complete Color Manager Manual</A>
+    <LI><A HREF="http://www.cie.co.at/cie/" TARGET="_top">International Commission on Illumination</A>
+    <LI><A HREF="http://www.color.org/" TARGET="_top">ICC Home Page</A>
+    <LI><A HREF="http://web.access.net.au/argyll/icc_readme.html" TARGET="_top">ICC File I/O README</A>
+    
+    <P>
+    <LI><A HREF="http://www.cix.co.uk/~tsphoto/tech/filmscan/menu.htm" TARGET="_top">Tony Sleep's Film Scanner Comparison</A>
+    <LI><A HREF="http://www.imaging-resource.com/SCAN1.HTM" TARGET="_top">Digital Scanner Reviews</A>
+</UL>
+
+<P>
+If you use Scarse, please leave a link to your web pages in
+<A HREF="/db/links/scarse">Scarse Users List</A>.
+
+
+<P ALIGN=center>[ <A HREF="/db/comments/scarse">Add/View Comments</A> ]<BR>
+[Back to <A HREF="http://www.coloraid.de/" TARGET="_top">The Color Tools site</A>]
+
+<HR>
+<ADDRESS>
+Andrei Frolov &lt;<A HREF="mailto:andrei@phys.ualberta.ca">andrei@phys.ualberta.ca</A>&gt;
+</ADDRESS>
+
+</BODY>
+</HTML>

@@ -1,0 +1,177 @@
+Scarse (Scanner CAlibration ReaSonably Easy)  --  readme
+========================================================
+
+What is it?
+===========
+
+As the name implies, color management issues are rarely addressed in
+the free software world, probably because until now good scanner
+hardware was unaffordable to a mere mortal. However, for everything
+there is a first, and I am proud to announce the first public release
+of free scanner calibration software, Scarse Version 0.1-alpha.
+
+Scarse is developed for Unix machines and is distributed under the
+terms of GNU Public License (see file COPYING).
+
+Scarse project was born out of my desire to be able to get good scans
+which are consistent across large batches, and do it with minimal
+amount of manual tweaking. It is intended for serious photographic
+applications, and is most useful with high-end film scanners. If you
+just want to occasionally scan a snapshot of your aunt on your $100
+flatbed and don't care about the colors as long as they are snappy,
+don't bother, this package is not for you.
+
+Right now, the Scarse is at early development stages, and is not as
+polished as commercial systems are. Indeed, it is quite rough and even
+downright inconvenient in places. However, it is quite functional
+already, and produces transparency scans which are easily superior to
+what I get from commercial Polaroid SprintScan 4000 drivers (using the
+same hardware). Those of you who are used to super-saturated output of
+typical consumer scanners might be disappointed with Scarse scans, but
+what they lack in visual punch, they more than make up in subtleness.
+
+So if you are adventurous type, give it a try, and tell me what you
+think...
+
+
+How does it work?
+=================
+
+It works quite well, thank you :). Oh, you meant technical details :)?
+
+Scarse works by comparing the scan of a hardcopy reference calibration
+target (such as Kodak Q60) coming from your hardware to the actual
+colors the target is supposed to have. It then builds (by interpolation)
+lookup tables that take into account the measured scanner hardware
+peculiarities. Using thus generated profile, you can then get scans with
+color rendition (more or less :) independent of the particular hardware
+used.
+
+You will need supported hardcopy calibration target. Kodak Q60 offers a
+lot of color points to measure and thus produces quite precise profiles.
+It is available from Kodak in 35mm and 4x5 transparency, as well as 5x7
+reflective formats. In the future, I plan adding support for other
+standard calibration targets, such as Kodak Color Separation Guide and
+MacBeth Color Checker. Scans from negatives are not supported yet.
+
+
+Where do I find it?
+===================
+
+The latest release and development news can be found at Scarse homepage
+
+	http://ohm.phys.ualberta/scarse/
+
+You can contact the author (that's me :) directly by email
+
+	Andrei Frolov <andrei@phys.ualberta.ca>
+
+
+What's included?
+================
+
+Included in this distribution are:
+	
+	CHANGES		- change log
+	COPYING		- GNU Public License
+	CREDITS		- people who contributed to development
+	INSTALL		- installation notes
+	README		- this file
+	TODO		- to do list
+	VERSION		- distribution version number
+	
+	icclib/		- icclib & examples by Graeme W. Gill
+	src/		- scarse source code, including
+	  ipb		    ICC profile builder
+	  calibrate	    input/output device calibration utility
+	  cmap		    utility to translate image through ICC profiles
+	src/Q60DATA	- Kodak test target data
+
+
+How do I compile/install/use it?
+================================
+
+Read installation notes in file INSTALL - in brief, edit makefiles to
+suit your machine configuration and then say
+
+	make; make install
+
+in the top directory.
+
+As for using it, I have not written proper documentation and man pages
+yet, so you are on your own :). Tutorial on color calibration could not
+hurt either, as there is a lot of confusion around the issue. But for
+now, I'll assume that you know what you are doing, and are not afraid
+of reading source code :). So I'll just give a few examples of what you
+can do with this package. Note that all tools will print the summary of
+their usage and options if invoked with '-h' flag.
+
+To generate scanner profile:
+
+    Scan calibration target (Kodak Q60) at full bit width hardware
+    support, and save it as TIFF file. Open it up in viewer and find
+    the position of the target corners (those white/black crosslines
+    around the target grid) and write it down as X geometry
+    specification in percent of the total image size. (If you are
+    unclear on what I mean, see example at Scarse home page.) This
+    step is important, as calibration utility must align grid with
+    all those colored squares, or else it will produce bogus colors.
+    Then say something like
+
+    	calibrate -v -d scanner -tQ60E3 -b1998:08 -i file.tif -g 90x80+5+10 profile.icm
+    
+    If it complains about 'fluctuations too big', either your scan is
+    really noisy, or the grid was misaligned. Check the geometry
+    specification again if unsure.
+
+To generate display profile:
+
+    Proper display calibration is not supported yet (and would require
+    some kind of photometer, anyway). However, you can easily generate
+    generic power-law profiles by saying something like
+
+    	calibrate -v -d display -g2.5 -w Lab:87.54,1.07,-1.37 -b Lab:1.05,0.87,-4.39 profile.icm
+    
+    If you get gamma and black and white points right, the results are
+    precise enough for all but most critical use. In fact, gamma-law
+    profile is what most commercial display calibration programs use
+    (Colorific, for example). Typical gamma for PC monitor is 2.5, for
+    Mac it is 1.8. Black and white points in example above correspond
+    to DMIN and DMAX of Ektachrome film, but you might want to fiddle
+    with them a little. Also check out autoexposure (-a) flag.
+
+To generate generic profile:
+
+   ICC profile builder, ipb, can build profiles connecting various
+   color spaces, generic or tailored to fit some set of measured data.
+   For example, to generate generic RGB to Lab transform, say
+
+   	ipb -v -c input -iRGB -oLab profile.icm
+
+To use the profiles you generated:
+
+   Use cmap to translate image through a series of profiles, and store
+   the result as TIFF image. You can also control how image is stored,
+   check cmap options for more details. Typical use would be
+
+   	cmap -v -p scanner.icm -r display.icm raw.tif calibrated.tif
+
+
+What if I find a bug?
+=====================
+
+What do you mean, a bug? It's a feature! :) Seriously though, as this
+is first alpha, and not tested to any significant extent, expect bugs.
+Lots of them. If you find one, please send bug report to me (my email
+is at the bottom of this page), including description what went wrong
+and what were you doing at the time. Better yet, fix it yourself and
+send me a patch :). I also want to hear improvement suggestions and
+(constructive) critique. There is also a wish list at Scarse home page.
+
+And if you want to contribute to this project, please do!
+
+
+
+Well, that's all for now...
+
+-- Andrei Frolov <andrei@phys.ualberta.ca>
