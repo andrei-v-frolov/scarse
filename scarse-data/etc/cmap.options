@@ -1,4 +1,4 @@
-# $Id: cmap.options,v 1.1 2000/08/09 02:18:47 andrei Exp $
+# $Id: cmap.options,v 1.2 2000/09/21 11:08:56 andrei Exp $
 # 
 # Option macros (long options) definitions  --  cmap
 # 
@@ -15,3 +15,7 @@
 help		-h
 version		-h
 debug		-vvvvv
+
+# Film-specific options
+slide		-Aw
+negative	-or -Or -ALg
