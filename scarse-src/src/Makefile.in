@@ -1,0 +1,86 @@
+################################################################
+# $Id: Makefile.in,v 1.1.1.1 2001/01/26 22:45:32 frolov Exp $
+# Makefile for Scarse source code
+################################################################
+
+SHELL = /bin/sh
+
+PREFIX  = /usr/local
+
+BINDIR  = $(PREFIX)/bin
+LIBDIR  = $(PREFIX)/lib
+DATADIR = $(PREFIX)/share/cms
+
+
+CC	= gcc
+LD	= ld
+AR	= ar -r
+RANLIB	= ranlib
+INSTALL = install
+
+VERSION = $(shell cat ../VERSION)
+
+
+# Compiler flags
+#CFLAGS	= -m486 -g -pg -Wall
+CFLAGS	= -m486 -O6 -fomit-frame-pointer -funroll-loops
+INCLUDE	= -I../icclib
+DEFINES	= -DVERSION='"$(VERSION)"' -DDATADIR='"$(DATADIR)"'
+
+LIBS	= -L../icclib -ltiff -licc -lm
+LDFLAGS	=
+
+ALLFLAGS = $(CFLAGS) $(INCLUDE) $(DEFINES)
+
+
+# Files
+hdrs = $(wildcard *.h imageio/*.h)
+objs = $(wildcard *.o imageio/*.o *.a)
+bins = cmap ipb calibrate
+
+
+# Targets
+.PHONY: all clean distclean install_bins install_targets install
+
+all: $(bins)
+
+clean:
+	rm -f $(objs)
+
+distclean: clean
+	rm -f $(bins)
+
+install_bins: $(bins)
+	$(INSTALL) -d $(BINDIR)
+	$(INSTALL) -s $(bins) $(BINDIR)
+
+install_targets:
+	$(INSTALL) -d $(DATADIR)
+	$(INSTALL) -d $(DATADIR)/targets
+	$(INSTALL) -d $(DATADIR)/targets/faust
+	$(INSTALL) -d $(DATADIR)/targets/kodak
+	$(INSTALL) -d $(DATADIR)/targets/macbeth
+	$(INSTALL) -m 0644 targets/TARGETS $(DATADIR)
+	$(INSTALL) -m 0644 `awk '!/^(#|$)/ {print "targets/" $3;}' targets/TARGETS` $(DATADIR)
+
+install: install_bins
+
+
+# Dependencies
+cmap: cmap.o imageio.a util.o
+
+ipb: ipb.o interp.o fit.o sort.o spaces.o matrix.o util.o
+
+calibrate: calibrate.o targets.o imageio.a sort.o spaces.o matrix.o util.o
+
+imageio.a: $(addprefix imageio/, pack.o tiff.o ppm.o imageio.o)
+	$(AR) $@ $^
+	$(RANLIB) $@
+
+
+# Implicit rules
+%.o: %.c $(hdrs)
+	$(CC) $(ALLFLAGS) -c $< -o $@
+
+%: %.o
+	$(CC) $(ALLFLAGS) $^ $(LIBS) -o $@
