@@ -1,4 +1,4 @@
-/* $Id: fit.c,v 1.3 2001/02/05 03:59:40 frolov Exp $ */
+/* $Id: fit.c,v 1.4 2001/02/12 00:21:45 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -256,17 +256,20 @@ static double model(double p[], double x)
 /* Minimization criterion is least square */
 static double chi2(double p[])
 {
-	double t, s = 0.0;
 	int i, n = _curve_pts_;
+	double t, s = 0.0, min = 1.0, max = 0.0;
 	double *x = _curve_data_[0], *y = _curve_data_[1], *dy = _curve_data_[2];
 	
 	for (i = 0; i < n; i++) {
+		if (y[i] < min) min = y[i];
+		if (y[i] > max) max = y[i];
+		
 		t = (y[i] - model(p, x[i]))/dy[i]; s += t*t;
 	}
 	
 	/* Penalty for saturation points wandering outside range */
-	if (p[3] < 0.0) s += 1.0e6 * fabs(p[3]);
-	if (p[4] > 1.0) s += 1.0e6 * fabs(p[4]-1.0);
+	if (p[3] < min) s *= 1.0 + 100.0*(p[3]-min)*(p[3]-min);
+	if (p[4] > max) s *= 1.0 + 100.0*(p[4]-max)*(p[4]-max);
 	
 	return s/n;
 }
