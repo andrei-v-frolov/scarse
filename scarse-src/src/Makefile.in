@@ -1,5 +1,5 @@
 ################################################################
-# $Id: Makefile.in,v 1.1 2001/01/26 22:45:32 frolov Exp $
+# $Id: Makefile.in,v 1.2 2001/01/28 23:18:28 frolov Exp $
 # Makefile for Scarse source code
 ################################################################
 
@@ -40,7 +40,7 @@ bins = cmap ipb calibrate
 
 
 # Targets
-.PHONY: all clean distclean install_bins install_targets install
+.PHONY: all clean distclean install
 
 all: $(bins)
 
@@ -50,20 +50,9 @@ clean:
 distclean: clean
 	rm -f $(bins)
 
-install_bins: $(bins)
+install: $(bins)
 	$(INSTALL) -d $(BINDIR)
 	$(INSTALL) -s $(bins) $(BINDIR)
-
-install_targets:
-	$(INSTALL) -d $(DATADIR)
-	$(INSTALL) -d $(DATADIR)/targets
-	$(INSTALL) -d $(DATADIR)/targets/faust
-	$(INSTALL) -d $(DATADIR)/targets/kodak
-	$(INSTALL) -d $(DATADIR)/targets/macbeth
-	$(INSTALL) -m 0644 targets/TARGETS $(DATADIR)
-	$(INSTALL) -m 0644 `awk '!/^(#|$)/ {print "targets/" $3;}' targets/TARGETS` $(DATADIR)
-
-install: install_bins
 
 
 # Dependencies
