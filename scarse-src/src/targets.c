@@ -1,4 +1,4 @@
-/* $Id: targets.c,v 1.5 2001/02/27 04:00:53 frolov Exp $ */
+/* $Id: targets.c,v 1.6 2001/06/26 00:09:29 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <fnmatch.h>
 #include <math.h>
 
@@ -105,6 +106,8 @@ typedef enum {UNDEF, OK, FORMAT, DATA, LAYOUT} ParserState;
 
 static char *state_id[] = /* state id strings for error reporting */
 	{"undef", "header", "data format", "data", "target layout"};
+static char *state_et[] = /* end-of-state tags for error reporting */
+	{"IT8.7", "END_...", "END_DATA_FORMAT", "END_DATA", "END_LAYOUT"};
 
 /* Parser state */
 static ParserState state = UNDEF;
@@ -375,12 +378,18 @@ static ParserTransitions trans_table[] = {
 
 
 /* Parse a token from input stream */
-static void parse_token()
+static int parse_token()
 {
 	int i;
 	
-	if (fscanf(source, "%64s", token) != 1) return;
-	if (*token == '#') { fscanf(source, "%*[^\n]\n"); return; }
+	if (fscanf(source, "%64s", token) != 1) return 0;
+	
+	for (i = 0; token[i]; i++) if (!isprint(token[i])) {
+		warning("%s: binary junk encountered, skipping to EOF", it87file);
+		return 0;
+	}
+	
+	if (*token == '#') { fscanf(source, "%*[^\n]\n"); return 1; }
 	
 	for (i = 0; trans_table[i].tag; i++) {
 		if (trans_table[i].from != state) continue;
@@ -391,14 +400,27 @@ static void parse_token()
 		if (trans_table[i].action)
 			(*trans_table[i].action)(trans_table[i].arg);
 		
-		return;
+		return 1;
 	}
 	
 	/* No valid transition */
-	if (state == UNDEF)
-		error("%s: missing magic 'IT8.7' tag (got '%s' instead) - wrong file type?\n", it87file, token);
-	else
+	if (state != UNDEF)
 		error("%s: invalid tag '%s' encountered while parsing %s", it87file, token, state_id[state]);
+	
+	return 0;
+}
+
+/* Parse a series of tokens from file */
+static void parse_file(char *file)
+{
+	it87file = file; source = xfetch("targets", file, "r");
+	
+	while (!feof(source) && !ferror(source) && parse_token());
+	
+	if (state == UNDEF) error("%s: missing magic 'IT8.7' tag - wrong file type?", it87file);
+	else if (state != OK) warning("%s: IT8.7 parser left in intermediate state - missing %s tag?", it87file, state_et[state]);
+	
+	fclose(source); state = UNDEF;
 }
 
 
@@ -497,20 +519,13 @@ static int label_idx(const char *id)
 /* Parse IT8.7 data file and store the data in the target structure */
 void parse_IT87_target(target *tg, char *data_file, char *layout_file)
 {
-	/* parse IT8.7 data file */
-	it87file = data_file;
-	source = xfetch("targets", data_file, "r");
-	while (!feof(source) && !ferror(source)) parse_token();
-	if (state != OK) warning("%s: IT8.7 parser left in intermediate state - missing END_... tag?", it87file);
-	
-	fclose(source);
-	state = UNDEF;
-	
-	/* store parsed calibration data into target structure */
+	/* parse and store calibration data into target structure */
 	{
 		double in[3];
 		int i, j, idx[3];
 		transform data2XYZ;
+		
+		parse_file(data_file);
 		
 		/* sanity checks */
 		if (!data) error("%s: no calibration data found", it87file);
@@ -535,18 +550,11 @@ void parse_IT87_target(target *tg, char *data_file, char *layout_file)
 		}
 	}
 	
-	/* parse IT8.7 layout file */
-	it87file = layout_file;
-	source = xfetch("targets", layout_file, "r");
-	while (!feof(source) && !ferror(source)) parse_token();
-	if (state != OK) warning("%s: IT8.7 parser left in intermediate state - missing END_... tag?", it87file);
-	
-	fclose(source);
-	state = UNDEF;
-	
-	/* store parsed layout data into target structure */
+	/* parse and store layout data into target structure */
 	{
 		int i, j, k;
+		
+		parse_file(layout_file);
 		
 		/* sanity checks */
 		if (!layout) error("%s: no target layout found", it87file);

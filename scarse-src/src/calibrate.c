@@ -1,4 +1,4 @@
-/* $Id: calibrate.c,v 1.4 2001/05/31 21:39:33 frolov Exp $ */
+/* $Id: calibrate.c,v 1.5 2001/06/26 00:09:29 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -145,10 +145,34 @@ static void scanner_correction(FILE *fp, target *tg)
 
 /**********************************************************************/
 
+/* Open pipe to ICC profile builder backend */
+static FILE *pipe2ipb()
+{
+	FILE *fp;
+	char *buffer, *verb;
+	char *class[3] = {"i -U", "d -M", "o"};
+	
+	if (debug) return stdout;
+	
+	verb = xstrdup("-vvvvv");
+	if (verbose) { if (verbose < 5) verb[verbose+1] = 0; } else *verb = 0;
+	
+	asprintf(&buffer, "ipb %s -c%s -C- %s %s",
+		verb, class[device], ipb_options, profile);
+	
+	if (!(fp = popen(buffer, "w")))
+		error("Could not start profile builder, command line:\n\t%s", buffer);
+	
+	free(buffer); free(verb);
+	
+	return fp;
+}
+
+
+/* Main routine */
 int main(int argc, char *argv[])
 {
 	char c;
-	FILE *ipb;
 	
 	/* RGB setup */
 	{
@@ -266,32 +290,12 @@ int main(int argc, char *argv[])
 	profile = argv[optind++];
 	
 	
-	/* Start ICC profile builder backend */
-	if (!debug) {
-		char *buffer, *verb = "";
-		char *class[3] = {"i -U", "d -M", "o"};
-		
-		if (verbose) {
-			verb = xstrdup("-vvvvv");
-			if (verbose < 5) verb[verbose+1] = 0;
-		}
-		
-		asprintf(&buffer, "ipb %s -c%s -C- %s %s",
-			verb, class[device], ipb_options, profile);
-		
-		ipb = popen(buffer, "w");
-		if (!ipb)
-			error("Could not start profile builder, command line:\n\t%s", buffer);
-		
-		free(buffer);
-	} else ipb = stdout;
-	
-	
 	/* Output correction data */
 	switch (device) {
 		case SCANNER:
+			if (!ctg) error("No calibration target given, nothing to do...");
 			if (verbose) fprintf(stderr, "Generating scanner profile '%s' from collected data\n", profile);
-			scanner_correction(ipb, ctg);
+			{ FILE *ipb = pipe2ipb(); scanner_correction(ipb, ctg); pclose(ipb); }
 			break;
 		case DISPLAY:
 			usage();
@@ -302,8 +306,6 @@ int main(int argc, char *argv[])
 		default:
 			usage();
 	}
-	
-	fclose(ipb);
 	
 	return 0;
 }
