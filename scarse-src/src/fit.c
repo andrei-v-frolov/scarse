@@ -1,4 +1,4 @@
-/* $Id: fit.c,v 1.4 2001/02/12 00:21:45 frolov Exp $ */
+/* $Id: fit.c,v 1.5 2001/06/27 03:55:44 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -19,69 +19,17 @@
 
 
 
-/******************* Some linear algebra first ************************/
+/**********************************************************************/
 
-/* Gauss-Jordan elimination with full pivoting */
-/* returns inverse of the matrix in A, and solution to Ax=B in B */
-void gaussj(double **A, int n, double **B, int m)
-{
-	double pivot, Aji;
-	int i, j, k, pr, pc, temp;
-	double **U = matrix(n, n+m);
-	int *c = ivector(n), *r = ivector(n);
-	
-	#define SWAP(a,b) {temp=(a);(a)=(b);(b)=temp;}
-	
-	/* Initialize */
-	for (i = 0; i < n; i++) {
-		c[i] = r[i] = i;
-		for (j = 0; j < n; j++) U[i][j] = 0.0; U[i][i] = 1.0;
-		for (j = 0; j < m; j++) U[i][n+j] = B[i][j];
-	}
-	
-	/* Gauss-Jordan elimination loop */
-	for (i = 0; i < n; i++) {
-		/* Find next pivot element */
-		pivot = 0.0; pr = pc = i;
-		
-		for (j = i; j < n; j++) for (k = i; k < n; k++) {
-			if (fabs(A[r[j]][c[k]]) > fabs(pivot)) {
-				pivot = A[r[j]][c[k]];
-				pr = j; pc = k;
-			}
-		}
-		
-		if (pivot == 0.0) error("Singular matrix in gaussj()");
-		
-		/* Bring it into top left corner */
-		SWAP(r[i], r[pr]); SWAP(c[i], c[pc]);
-		
-		/* Eliminate all elements in a column except pivot one */
-		A[r[i]][c[i]] = 1.0;
-		for (j = i+1; j < n; j++) A[r[i]][c[j]] /= pivot;
-		for (j = 0; j < n+m; j++) U[r[i]][j] /= pivot;
-		
-		for (j = 0; j < n; j++) if (j != i) {
-			Aji = A[r[j]][c[i]]; A[r[j]][c[i]] = 0.0;
-			for (k = i+1; k < n; k++) A[r[j]][c[k]] -= Aji*A[r[i]][c[k]];
-			for (k = 0; k < n+m; k++) U[r[j]][k] -= Aji*U[r[i]][k];
-		}
-		
-	}
-	
-	/* recover original order of the rows and columns */
-	for (i = 0; i < n; i++) {
-		for (j = 0; j < n; j++) A[c[i]][j] = U[r[i]][j];
-		for (j = 0; j < m; j++) B[c[i]][j] = U[r[i]][n+j];
-	}
-	
-	free_matrix(U);
-	free_vector(c);
-	free_vector(r);
-	
-	#undef SWAP
-}
-
+/*
+ * Non-linear model fitting:
+ *   chi^2 optimization via simulated annealing
+ * 
+ * Data models:
+ *   - power-law curve with clipping
+ *   - 3x3 matrix transform with clipping
+ * 
+ */
 
 
 /******************* Simulated annealing ******************************/
@@ -232,7 +180,6 @@ void anneal(double **S, int n, double (*func)(double []), double T0, int maxstep
 }
 
 
-
 /******************* Non-linear curve model ***************************/
 
 /* Curve data is passed as global variable */
@@ -240,34 +187,34 @@ static int _curve_pts_;
 static double **_curve_data_;
 
 
-/* Curve model is power law with possible saturation */
-static double model(double p[], double x)
+/* Curve model is power law with possible clipping */
+static double curve_model(double p[], double y)
 {
-	double y;
+	double x;
 	
-	y = p[0]*pow(x, p[2]) + p[1];
+	x = p[0]*pow(y, p[2]) + p[1];
 	
-	if (y < p[3]) y = p[3];
-	if (y > p[4]) y = p[4];
+	if (x < p[3]) x = p[3];
+	if (x > p[4]) x = p[4];
 	
-	return y;
+	return x;
 }
 
 /* Minimization criterion is least square */
-static double chi2(double p[])
+static double curve_chi2(double p[])
 {
 	int i, n = _curve_pts_;
 	double t, s = 0.0, min = 1.0, max = 0.0;
-	double *x = _curve_data_[0], *y = _curve_data_[1], *dy = _curve_data_[2];
+	double *y = _curve_data_[0], *x = _curve_data_[1], *dx = _curve_data_[2];
 	
 	for (i = 0; i < n; i++) {
-		if (y[i] < min) min = y[i];
-		if (y[i] > max) max = y[i];
+		if (x[i] < min) min = x[i];
+		if (x[i] > max) max = x[i];
 		
-		t = (y[i] - model(p, x[i]))/dy[i]; s += t*t;
+		t = (x[i] - curve_model(p, y[i]))/dx[i]; s += t*t;
 	}
 	
-	/* Penalty for saturation points wandering outside range */
+	/* Penalty for clipping bounds wandering outside range */
 	if (p[3] < min) s *= 1.0 + 100.0*(p[3]-min)*(p[3]-min);
 	if (p[4] > max) s *= 1.0 + 100.0*(p[4]-max)*(p[4]-max);
 	
@@ -284,9 +231,9 @@ double *fit_curve(double **data, int n)
 	_curve_data_ = data; _curve_pts_ = n;
 	p[0] = p[2] = p[4] = 1.0; p[1] = p[3] = 0.0;
 	
-	S = new_amoeba(p, D, chi2, 1.0); anneal(S, D, chi2, 5.0, 1000, 1.0e-6);
-	restart_amoeba(S, D, chi2, 1.0); anneal(S, D, chi2, 0.5, 1000, 1.0e-6);
-	restart_amoeba(S, D, chi2, 1.0); anneal(S, D, chi2, 0.0, 9999, 1.0e-6);
+	S = new_amoeba(p, D, curve_chi2, 1.0); anneal(S, D, curve_chi2, 5.0, 1000, 1.0e-6);
+	restart_amoeba(S, D, curve_chi2, 1.0); anneal(S, D, curve_chi2, 0.5, 1000, 1.0e-6);
+	restart_amoeba(S, D, curve_chi2, 1.0); anneal(S, D, curve_chi2, 0.0, 9999, 1.0e-6);
 	
 	for (i = 0; i <= D; i++)
 		p[i] = S[D+1][i];
@@ -298,32 +245,177 @@ double *fit_curve(double **data, int n)
 }
 
 
-/* Check if the value is within curve range */
-int within_range(double p[], double y)
+/* Curve lookup y = f(x) */
+double lu_curve(double p[], double x)
 {
-	return (y > p[3]) && (y < p[4]);
-}
-
-/* Curve lookup x = f^(-1)(y) */
-double lu_curve(double p[], double y)
-{
-	register double x = (y - p[1])/p[0];
+	register double y = (x - p[1])/p[0];
 	
-	return ppow(x, 1.0/p[2]);
+	return ppow(y, 1.0/p[2]);
 }
 
-/* Reverse lookup y = f(x) */
-double lu_curve_1(double p[], double x)
+/* Reverse lookup x = f^(-1)(y) */
+double lu_curve_1(double p[], double y)
 {
-	return p[0]*pow(x, p[2]) + p[1];
+	return p[0]*pow(y, p[2]) + p[1];
 }
 
 /* Curve slope */
-double curve_dydx(double p[], double x)
+double curve_dydx(double p[], double y)
 {
-	return p[0]*p[2]*pow(x, p[2]-1.0);
+	return 1.0/(p[0]*p[2]*pow(y, p[2]-1.0));
 }
 
+
+/******************* Robust matrix fit estimate ***********************/
+#warning Done up to here...
+
+/* LUT data is passed as global variable */
+static int _lut_pts_;
+static int _lut_channel_;
+static double **_lut_data_;
+
+
+/* LUT model is linear fit with possible clipping */
+static double lut_model(double p[], double XYZ[])
+{
+	double x;
+	
+	x = p[0]*XYZ[0] + p[1]*XYZ[1] + p[2]*XYZ[2];
+	
+	if (x < p[3]) x = p[3];
+	if (x > p[4]) x = p[4];
+	
+	return x;
+}
+
+/* Minimization criterion is least square */
+static double lut_chi2(double p[])
+{
+	int i, n = _lut_pts_;
+	double t, s = 0.0, min = 1.0, max = 0.0;
+	
+	for (i = 0; i < n; i++) {
+		double *XYZ = _lut_data_[i], x = _lut_data_[i][_lut_channel_+3], dx = _lut_data_[i][_lut_channel_+6];
+		
+		if (x < min) min = x;
+		if (x > max) max = x;
+		
+		t = (x - lut_model(p, XYZ))/dx; s += t*t;
+	}
+	
+	/* Penalty for clipping bounds wandering outside range */
+	if (p[3] < min) s *= 1.0 + 100.0*(p[3]-min)*(p[3]-min);
+	if (p[4] > max) s *= 1.0 + 100.0*(p[4]-max)*(p[4]-max);
+	
+	return s/n;
+}
+
+/* Fit linear model RGB=M*XYZ to the data using simulated annealing */
+void robust_linear_fit(double **data, int n, double M[3][3])
+{
+	int i, j;
+	#define D 5
+	
+	for (i = 0; i < 3; i++) {
+		double *p = vector(D+1), **S;
+		
+		_lut_data_ = data; _lut_pts_ = n; _lut_channel_ = i;
+		
+		p[0] = p[1] = p[2] = p[3] = 0.0; p[i] = p[4] = 1.0;
+		
+		S = new_amoeba(p, D, lut_chi2, 1.0); anneal(S, D, lut_chi2, 5.0, 1000, 1.0e-6);
+		restart_amoeba(S, D, lut_chi2, 1.0); anneal(S, D, lut_chi2, 0.5, 1000, 1.0e-6);
+		restart_amoeba(S, D, lut_chi2, 1.0); anneal(S, D, lut_chi2, 0.0, 9999, 1.0e-6);
+		
+		for (j = 0; j < 3; j++) M[i][j] = S[D+1][j];
+		for (j = 0; j <= D; j++)
+			fprintf(stderr, "%12.10g\t", S[D+1][j]);
+		fprintf(stderr, "\n");
+		
+		free_matrix(S);
+		free_vector(p);
+	}
+	
+	#undef D
+}
+
+
+
+/**********************************************************************/
+
+/*
+ * Linear model fitting:
+ *   chi^2 optimization via simulated annealing
+ * 
+ * Data models:
+ *   - power-law curve with saturation
+ *   - 3x3 matrix transform with saturation
+ * 
+ */
+
+
+/******************* Some linear algebra first ************************/
+
+/* Gauss-Jordan elimination with full pivoting */
+/* returns inverse of the matrix in A, and solution to Ax=B in B */
+void gaussj(double **A, int n, double **B, int m)
+{
+	double pivot, Aji;
+	int i, j, k, pr, pc, temp;
+	double **U = matrix(n, n+m);
+	int *c = ivector(n), *r = ivector(n);
+	
+	#define SWAP(a,b) {temp=(a);(a)=(b);(b)=temp;}
+	
+	/* Initialize */
+	for (i = 0; i < n; i++) {
+		c[i] = r[i] = i;
+		for (j = 0; j < n; j++) U[i][j] = 0.0; U[i][i] = 1.0;
+		for (j = 0; j < m; j++) U[i][n+j] = B[i][j];
+	}
+	
+	/* Gauss-Jordan elimination loop */
+	for (i = 0; i < n; i++) {
+		/* Find next pivot element */
+		pivot = 0.0; pr = pc = i;
+		
+		for (j = i; j < n; j++) for (k = i; k < n; k++) {
+			if (fabs(A[r[j]][c[k]]) > fabs(pivot)) {
+				pivot = A[r[j]][c[k]];
+				pr = j; pc = k;
+			}
+		}
+		
+		if (pivot == 0.0) error("Singular matrix in gaussj()");
+		
+		/* Bring it into top left corner */
+		SWAP(r[i], r[pr]); SWAP(c[i], c[pc]);
+		
+		/* Eliminate all elements in a column except pivot one */
+		A[r[i]][c[i]] = 1.0;
+		for (j = i+1; j < n; j++) A[r[i]][c[j]] /= pivot;
+		for (j = 0; j < n+m; j++) U[r[i]][j] /= pivot;
+		
+		for (j = 0; j < n; j++) if (j != i) {
+			Aji = A[r[j]][c[i]]; A[r[j]][c[i]] = 0.0;
+			for (k = i+1; k < n; k++) A[r[j]][c[k]] -= Aji*A[r[i]][c[k]];
+			for (k = 0; k < n+m; k++) U[r[j]][k] -= Aji*U[r[i]][k];
+		}
+		
+	}
+	
+	/* recover original order of the rows and columns */
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < n; j++) A[c[i]][j] = U[r[i]][j];
+		for (j = 0; j < m; j++) B[c[i]][j] = U[r[i]][n+j];
+	}
+	
+	free_matrix(U);
+	free_vector(c);
+	free_vector(r);
+	
+	#undef SWAP
+}
 
 
 /******************* Generalized least square fit *********************/
