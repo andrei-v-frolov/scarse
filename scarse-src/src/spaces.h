@@ -1,4 +1,4 @@
-/* $Id: spaces.h,v 1.1 2001/01/26 22:45:32 frolov Exp $ */
+/* $Id: spaces.h,v 1.2 2001/03/22 20:40:46 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -17,7 +17,7 @@
 #ifndef __SPACES_H__
 #define __SPACES_H__
 
-#define MAXCHANNELS 8	/* Compile-time default; change to suit */
+#define MAXCHANNELS 4	/* Compile-time default; change to suit */
 
 
 extern double XYZ_WPT[3], M_RGB2XYZ[3][3], M_XYZ2RGB[3][3];
