@@ -1,4 +1,4 @@
-/* $Id: util.h,v 1.5 2001/06/27 03:58:57 frolov Exp $ */
+/* $Id: util.h,v 1.6 2001/06/28 00:41:57 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -54,6 +54,9 @@ unsigned long *uvector(unsigned long n);
 unsigned long *grow_uvector(unsigned long *v, unsigned long n);
 void free_vector(void *v);
 
+void vcopy(double src[], double dest[], unsigned long n);
+void vgamma(double src[], double dest[], unsigned long n, double gamma);
+
 double **matrix(unsigned long nr, unsigned long nc);
 double **grow_matrix(double **m, unsigned long nr, unsigned long nc);
 void free_matrix(double **m);
@@ -76,13 +79,15 @@ double absdev(unsigned long n, double arr[], double x);
 
 /* 3x3 matrix operations (matrix.c) */
 
+void vcopy3(double A[3], double B[3]);
+void diag33(double A[3], double M[3][3]);
+
 double det33(double M[3][3]);
 void inv33(double M[3][3], double N[3][3]);
 void mult33(double M[3][3], double N[3][3], double L[3][3]);
 void apply33(double M[3][3], double A[3], double B[3]);
 double qform33(double M[3][3], double A[3], double B[3]);
 void biscale33(double A[3], double M[3][3], double B[3], double N[3][3]);
-void diag33(double A[3], double M[3][3]);
 
 
 /* Data fitting and approximation routines (fit.c) */

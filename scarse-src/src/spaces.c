@@ -1,4 +1,4 @@
-/* $Id: spaces.c,v 1.5 2001/06/27 03:58:57 frolov Exp $ */
+/* $Id: spaces.c,v 1.6 2001/06/28 00:41:56 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -530,72 +530,6 @@ void CMYK2CMY(double in[], double out[])
 
 /***************** Arbitrary color space conversions ******************/
 
-/* Return number of channels in color space */
-int channels(icColorSpaceSignature any)
-{
-	switch (any) {
-		case icSigGrayData:
-			return 1;
-		case icSigXYZData:
-		case icSigLabData:
-		case icSigLuvData:
-		case icSigYxyData:
-		case icSigRgbData:
-		case icSigHsvData:
-		case icSigCmyData:
-			return 3;
-		case icSigCmykData:
-			return 4;
-		default:
-			error("[%s]: Color space not supported",
-				ColorSpaceSignature2str(any));
-	}
-	
-	return 0;
-}
-
-/* Convert string into ICC color space signature */
-icColorSpaceSignature str2ColorSpaceSignature(char *s)
-{
-	if (!strcasecmp(s, "XYZ")) return icSigXYZData;
-	if (!strcasecmp(s, "Lab")) return icSigLabData;
-	if (!strcasecmp(s, "Luv")) return icSigLuvData;
-	if (    !strcmp(s, "Yxy")) return icSigYxyData;
-	if (!strcasecmp(s, "RGB")) return icSigRgbData;
-	if (!strcasecmp(s, "GRAY")) return icSigGrayData;
-	if (!strcasecmp(s, "HSV")) return icSigHsvData;
-	if (!strcasecmp(s, "CMY")) return icSigCmyData;
-	if (!strcasecmp(s, "CMYK")) return icSigCmykData;
-	
-	error("[%s]: Color space not supported", s); return 0;
-}
-
-
-/* Identity transformation of 3-channel data */
-void identity3(double in[], double out[])
-{
-	out[0] = in[0];
-	out[1] = in[1];
-	out[2] = in[2];
-}
-
-/* Identity transformation of multi-channel data */
-void identity(double in[], double out[], int channels)
-{
-	int i;
-	
-	for (i = 0; i < channels; i++) out[i] = in[i];
-}
-
-/* Gamma transformation of multi-channel data */
-void gamma_scale(double in[], double out[], int channels, double gamma)
-{
-	int i;
-	
-	for (i = 0; i < channels; i++) out[i] = ppow(in[i], gamma);
-}
-
-
 /* Composite of two transformations */
 #define composite(a, b, ab) void ab(double in[], double out[])\
 		{ double tmp[MAXCHANNELS]; a(in, tmp); b(tmp, out); }
@@ -615,7 +549,7 @@ transform toXYZ(icColorSpaceSignature any)
 {
 	switch (any) {
 		case icSigXYZData:
-			return identity3;
+			return vcopy3;
 		case icSigLabData:
 			return Lab2XYZ;
 		case icSigLuvData:
@@ -645,7 +579,7 @@ transform fromXYZ(icColorSpaceSignature any)
 {
 	switch (any) {
 		case icSigXYZData:
-			return identity3;
+			return vcopy3;
 		case icSigLabData:
 			return XYZ2Lab;
 		case icSigLuvData:
@@ -668,6 +602,47 @@ transform fromXYZ(icColorSpaceSignature any)
 	}
 	
 	return NULL;
+}
+
+
+/* Convert string into ICC color space signature */
+icColorSpaceSignature str2ColorSpaceSignature(char *s)
+{
+	if (!strcasecmp(s, "XYZ")) return icSigXYZData;
+	if (!strcasecmp(s, "Lab")) return icSigLabData;
+	if (!strcasecmp(s, "Luv")) return icSigLuvData;
+	if (    !strcmp(s, "Yxy")) return icSigYxyData;
+	if (!strcasecmp(s, "RGB")) return icSigRgbData;
+	if (!strcasecmp(s, "GRAY")) return icSigGrayData;
+	if (!strcasecmp(s, "HSV")) return icSigHsvData;
+	if (!strcasecmp(s, "CMY")) return icSigCmyData;
+	if (!strcasecmp(s, "CMYK")) return icSigCmykData;
+	
+	error("[%s]: Color space not supported", s); return 0;
+}
+
+/* Return number of channels in color space */
+int channels(icColorSpaceSignature any)
+{
+	switch (any) {
+		case icSigGrayData:
+			return 1;
+		case icSigXYZData:
+		case icSigLabData:
+		case icSigLuvData:
+		case icSigYxyData:
+		case icSigRgbData:
+		case icSigHsvData:
+		case icSigCmyData:
+			return 3;
+		case icSigCmykData:
+			return 4;
+		default:
+			error("[%s]: Color space not supported",
+				ColorSpaceSignature2str(any));
+	}
+	
+	return 0;
 }
 
 

@@ -1,4 +1,4 @@
-/* $Id: spaces.h,v 1.4 2001/06/27 03:58:57 frolov Exp $ */
+/* $Id: spaces.h,v 1.5 2001/06/28 00:41:57 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -25,13 +25,6 @@ extern double XYZ_ILLUM[3], XYZ_WPT[3], M_RGB2XYZ[3][3], M_XYZ2RGB[3][3];
 void SetPrimaries(double xy[4][2]);
 int LookupPrimaries(char *p, double dest[4][2], double *gamma);
 
-int channels(int any);
-int str2ColorSpaceSignature(char *s);
-
-void identity3(double in[], double out[]);
-void identity(double in[], double out[], int channels);
-void gamma_scale(double in[], double out[], int channels, double gamma);
-
 void XYZ2Yxy(double in[], double out[]);
 void Yxy2XYZ(double in[], double out[]);
 void XYZ2Lab(double in[], double out[]);
@@ -54,6 +47,9 @@ void CMYK2CMY(double in[], double out[]);
 
 typedef void (*transform)(double in[], double out[]);
 transform toXYZ(int any); transform fromXYZ(int any);
+
+int str2ColorSpaceSignature(char *s);
+int channels(int any);
 
 double Lab_dE(double Lab1[], double Lab2[]);
 double XYZ_dE(double XYZ1[], double XYZ2[]);

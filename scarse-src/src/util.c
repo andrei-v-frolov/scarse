@@ -1,4 +1,4 @@
-/* $Id: util.c,v 1.1 2001/01/26 22:45:32 frolov Exp $ */
+/* $Id: util.c,v 1.2 2001/06/28 00:41:57 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -19,6 +19,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <fnmatch.h>
+#include <math.h>
 
 #include "util.h"
 
@@ -272,6 +273,23 @@ unsigned long *grow_uvector(unsigned long *v, unsigned long n)
 void free_vector(void *v)
 {
 	free((void *)(v));
+}
+
+
+/* copy vector data with subscript range [0..n] */
+void vcopy(double src[], double dest[], unsigned long n)
+{
+	register unsigned long i;
+	
+	for (i = 0; i < n; i++) dest[i] = src[i];
+}
+
+/* apply gamma transformation to a vector */
+void vgamma(double src[], double dest[], unsigned long n, double gamma)
+{
+	register unsigned long i;
+	
+	for (i = 0; i < n; i++) dest[i] = ppow(src[i], gamma);
 }
 
 

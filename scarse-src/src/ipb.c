@@ -1,4 +1,4 @@
-/* $Id: ipb.c,v 1.6 2001/06/27 03:58:56 frolov Exp $ */
+/* $Id: ipb.c,v 1.7 2001/06/28 00:41:56 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -197,9 +197,9 @@ void incurves(void *cntx, double out[], double in[])
 	if (use_ins_curves)
 		xlate_curve(in, out, ins_channels, ins_curves);
 	else if (ins_gamma != 1.0)
-		gamma_scale(in, out, ins_channels, ins_gamma);
+		vgamma(in, out, ins_channels, ins_gamma);
 	else
-		identity(in, out, ins_channels);
+		vcopy(in, out, ins_channels);
 }
 
 /* Input curves for shadow-expanded LUT */
@@ -208,7 +208,7 @@ void incurves_expanded(void *cntx, double out[], double in[])
 	incurves(cntx, out, in);
 	
 	if (lut_shadow_expansion != 1.0)
-		gamma_scale(out, out, ins_channels, 1.0/lut_shadow_expansion);
+		vgamma(out, out, ins_channels, 1.0/lut_shadow_expansion);
 }
 
 /* Inverse of input curves */
@@ -217,9 +217,9 @@ void incurves_1(void *cntx, double out[], double in[])
 	if (use_ins_curves)
 		xlate_curve_1(in, out, ins_channels, ins_curves);
 	else if (ins_gamma != 1.0)
-		gamma_scale(in, out, ins_channels, 1.0/ins_gamma);
+		vgamma(in, out, ins_channels, 1.0/ins_gamma);
 	else
-		identity(in, out, ins_channels);
+		vcopy(in, out, ins_channels);
 }
 
 /* Output curves */
@@ -228,9 +228,9 @@ void outcurves(void *cntx, double out[], double in[])
 	if (use_outs_curves)
 		xlate_curve_1(in, out, outs_channels, outs_curves);
 	else if (outs_gamma != 1.0)
-		gamma_scale(in, out, outs_channels, 1.0/outs_gamma);
+		vgamma(in, out, outs_channels, 1.0/outs_gamma);
 	else
-		identity(in, out, outs_channels);
+		vcopy(in, out, outs_channels);
 }
 
 /* Inverse of output curves */
@@ -239,9 +239,9 @@ void outcurves_1(void *cntx, double out[], double in[])
 	if (use_outs_curves)
 		xlate_curve(in, out, outs_channels, outs_curves);
 	else if (outs_gamma != 1.0)
-		gamma_scale(in, out, outs_channels, outs_gamma);
+		vgamma(in, out, outs_channels, outs_gamma);
 	else
-		identity(in, out, outs_channels);
+		vcopy(in, out, outs_channels);
 }
 
 /* Inverse of output curves for shadow-expanded LUT */
@@ -250,7 +250,7 @@ void outcurves_1_expanded(void *cntx, double out[], double in[])
 	outcurves_1(cntx, out, in);
 	
 	if (lut_shadow_expansion != 1.0)
-		gamma_scale(out, out, ins_channels, 1.0/lut_shadow_expansion);
+		vgamma(out, out, ins_channels, 1.0/lut_shadow_expansion);
 }
 
 
@@ -261,7 +261,7 @@ void ctransform(void *cntx, double out[], double in[])
 	double t[3], XYZ[3], diff[3];
 	
 	if (lut_shadow_expansion != 1.0)
-		gamma_scale(in, in, ins_channels, lut_shadow_expansion);
+		vgamma(in, in, ins_channels, lut_shadow_expansion);
 		/* this clobbers input, but we don't care... */
 	
 	(*ins2XYZ)(in, t);
@@ -285,7 +285,7 @@ void ctransform_1(void *cntx, double out[], double in[])
 	double t[3], XYZ[3], diff[3];
 	
 	if (lut_shadow_expansion != 1.0)
-		gamma_scale(in, in, ins_channels, lut_shadow_expansion);
+		vgamma(in, in, ins_channels, lut_shadow_expansion);
 		/* this clobbers input, but we don't care... */
 	
 	(*outs2XYZ)(in, XYZ);
@@ -1329,9 +1329,7 @@ int main(int argc, char *argv[])
 	if (verbose) fprintf(stderr, "%s\n", usage_msg[0]);
 	
 	SetPrimaries(primaries);
-	media_white_pt[0] = XYZ_WPT[0];
-	media_white_pt[1] = XYZ_WPT[1];
-	media_white_pt[2] = XYZ_WPT[2];
+	vcopy3(XYZ_WPT, media_white_pt);
 	
 	ins_channels = channels(ins);
 	outs_channels = channels(outs);
