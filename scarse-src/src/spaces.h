@@ -1,4 +1,4 @@
-/* $Id: spaces.h,v 1.3 2001/05/31 21:39:33 frolov Exp $ */
+/* $Id: spaces.h,v 1.4 2001/06/27 03:58:57 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -20,15 +20,12 @@
 #define MAXCHANNELS 4	/* Compile-time default; change to suit */
 
 
-extern double XYZ_WPT[3], M_RGB2XYZ[3][3], M_XYZ2RGB[3][3];
+extern double XYZ_ILLUM[3], XYZ_WPT[3], M_RGB2XYZ[3][3], M_XYZ2RGB[3][3];
 
-void SetWhitePoint(double xy[]);
 void SetPrimaries(double xy[4][2]);
 int LookupPrimaries(char *p, double dest[4][2], double *gamma);
 
 int channels(int any);
-void range(int any, int channel, double r[]);
-
 int str2ColorSpaceSignature(char *s);
 
 void identity3(double in[], double out[]);

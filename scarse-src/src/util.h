@@ -1,4 +1,4 @@
-/* $Id: util.h,v 1.4 2001/02/05 03:59:41 frolov Exp $ */
+/* $Id: util.h,v 1.5 2001/06/27 03:58:57 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -81,25 +81,25 @@ void inv33(double M[3][3], double N[3][3]);
 void mult33(double M[3][3], double N[3][3], double L[3][3]);
 void apply33(double M[3][3], double A[3], double B[3]);
 double qform33(double M[3][3], double A[3], double B[3]);
+void biscale33(double A[3], double M[3][3], double B[3], double N[3][3]);
 void diag33(double A[3], double M[3][3]);
 
 
 /* Data fitting and approximation routines (fit.c) */
 
-void gaussj(double **A, int n, double **B, int m);
-
 double **new_amoeba(double x[], int n, double (*func)(double []), double lambda);
 void restart_amoeba(double **S, int n, double (*func)(double []), double lambda);
 void anneal(double **S, int n, double (*func)(double []), double T0, int maxsteps, double tol);
 
+double *fit_curve(double **data, int n);
+double lu_curve(double p[], double x);
+double lu_curve_1(double p[], double y);
+double curve_dydx(double p[], double y);
+
+void gaussj(double **A, int n, double **B, int m);
+
 double **best_fit(double **x, int n, void (*basis)(double [], double []), int d);
 void approx(double **A, void (*basis)(double [], double []), int d, double x[], double y[]);
-
-double *fit_curve(double **data, int n);
-int within_range(double p[], double y);
-double lu_curve(double p[], double y);
-double lu_curve_1(double p[], double x);
-double curve_dydx(double p[], double x);
 
 void best_linear_fit(double **x, int n, double M[3][3]);
 

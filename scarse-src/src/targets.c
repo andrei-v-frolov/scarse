@@ -1,4 +1,4 @@
-/* $Id: targets.c,v 1.6 2001/06/26 00:09:29 frolov Exp $ */
+/* $Id: targets.c,v 1.7 2001/06/27 03:58:57 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -658,10 +658,10 @@ void render_IT87_target(target *tg, char *file, char *geometry)
 		Lab[-1][0] = 50.0; Lab[-1][1] = Lab[-1][2] = 0.0;
 		
 		for (i = 0; i < tg->pts; i++) {
-			/* map Dmin to white point as per ICC specs */
-			t[0] = tg->data[i].XYZ[0]/Dmin[0]*XYZ_WPT[0];
-			t[1] = tg->data[i].XYZ[1]/Dmin[1]*XYZ_WPT[1];
-			t[2] = tg->data[i].XYZ[2]/Dmin[2]*XYZ_WPT[2];
+			/* map Dmin to PCS illuminant as per ICC specs */
+			t[0] = tg->data[i].XYZ[0]/Dmin[0]*XYZ_ILLUM[0];
+			t[1] = tg->data[i].XYZ[1]/Dmin[1]*XYZ_ILLUM[1];
+			t[2] = tg->data[i].XYZ[2]/Dmin[2]*XYZ_ILLUM[2];
 			
 			XYZ2Lab(t, Lab[i]);
 		}

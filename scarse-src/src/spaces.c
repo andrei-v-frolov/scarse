@@ -1,10 +1,10 @@
-/* $Id: spaces.c,v 1.4 2001/05/31 21:39:33 frolov Exp $ */
+/* $Id: spaces.c,v 1.5 2001/06/27 03:58:57 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
  * Generic color space conversions.
  * 
- * Copyright (C) 1999 Scarse Project
+ * Copyright (C) 1999-2001 Scarse Project
  * Distributed under the terms of GNU Public License.
  * 
  * Maintainer: Andrei Frolov <andrei@phys.ualberta.ca>
@@ -16,8 +16,6 @@
  *   CIE Lab code borrowed from icclib & examples by Graeme W. Gill
  *   HSV code adopted from ???
  */
-
-/* NOTE: XYZ scaling to 1.0, not 100.0! */
 
 /* TODO:
  *
@@ -34,23 +32,26 @@
 
 /******************* CIE XYZ based spaces *****************************/
 
-/* White point (in XYZ representation) */
-double XYZ_WPT[3] = {0.9642, 1.0000, 0.8249};	/* ICC D50 by default */
+/* IMPORTANT NOTE:
+ * ===============
+ *   XYZ values used here are based on RELATIVE colorimetry, meaning they
+ *   are scaled so that physical white point is always mapped to the same
+ *   value - the so-called PCS illuminant (specified to be D50 by ICC specs).
+ *   In addition, the max Y value we use is 1.0, not 100.0 as it's often set!
+ */
+
+/* PCS illuminant and white point (in absolute XYZ representation) */
+double XYZ_ILLUM[3] = {0.9642, 1.0000, 0.8249};	/* Always CIE illuminant D50 */
+double   XYZ_WPT[3] = {0.9505, 1.0000, 1.0891};	/* Adobe RGB (D65) by default */
 
 
-/* Set white point from xy coordinates */
-void SetWhitePoint(double xy[])
-{
-	double Yxy[] = {1.0, xy[0], xy[1]};
-	
-	Yxy2XYZ(Yxy, XYZ_WPT);
-}
-
-
-/* CIE XYZ to CIE Yxy */
+/* CIE (relative) XYZ to CIE (absolute) Yxy */
 void XYZ2Yxy(double in[], double out[])
 {
-	double X = in[0], Y = in[1], Z = in[2];
+	double *I = XYZ_ILLUM, *W = XYZ_WPT;
+	double X = (in[0]/I[0])*W[0];
+	double Y = (in[1]/I[1])*W[1];
+	double Z = (in[2]/I[2])*W[2];
 	double S = X + Y + Z;
 	
 	out[0] = Y;
@@ -58,32 +59,30 @@ void XYZ2Yxy(double in[], double out[])
 	out[2] = Y/S;
 }
 
-/* CIE Yxy to CIE XYZ */
+/* CIE (absolute) Yxy to CIE (relative) XYZ */
 void Yxy2XYZ(double in[], double out[])
 {
+	double *I = XYZ_ILLUM, *W = XYZ_WPT;
 	double Y = in[0], x = in[1], y = in[2];
-	double z = 1.0 - (x + y);
+	double z = 1.0 - (x + y), X = (x/y)*Y, Z = (z/y)*Y;
 	
-	out[0] = x*Y/y;
-	out[1] = Y;
-	out[2] = z*Y/y;
+	out[0] = (X/W[0])*I[0];
+	out[1] = (Y/W[1])*I[1];
+	out[2] = (Z/W[2])*I[2];
 }
 
 
-/* CIE XYZ to perceptual Lab with specified white point */
+/* CIE (relative) XYZ to perceptual Lab */
 void XYZ2Lab(double in[], double out[])
 {
-	double X = in[0], Y = in[1], Z = in[2], *w = XYZ_WPT;
-	double x, y, z, fx, fy, fz;
-	double L;
+	double *I = XYZ_ILLUM, fx, fy, fz, L;
+	double x = in[0]/I[0], y = in[1]/I[1], z = in[2]/I[2];
 	
-	x = X/w[0];
 	if (x > 0.008856451586)
 		fx = pow(x, 1.0/3.0);
 	else
 		fx = 7.787036979 * x + 16.0/116.0;
 	
-	y = Y/w[1];
 	if (y > 0.008856451586) {
 		fy = pow(y, 1.0/3.0);
 		L = 116.0 * fy - 16.0;
@@ -92,7 +91,6 @@ void XYZ2Lab(double in[], double out[])
 		L = 903.2963058 * y;
 	}
 	
-	z = Z/w[2];
 	if (z > 0.008856451586)
 		fz = pow(z, 1.0/3.0);
 	else
@@ -103,11 +101,11 @@ void XYZ2Lab(double in[], double out[])
 	out[2] = 200.0 * (fy - fz);
 }
 
-/* Perceptual Lab with specified white point to CIE XYZ */
+/* Perceptual Lab to CIE (relative) XYZ */
 void Lab2XYZ(double in[], double out[])
 {
-	double L = in[0], a = in[1], b = in[2], *w = XYZ_WPT;
-	double x, y, z, fx, fy, fz;
+	double L = in[0], a = in[1], b = in[2];
+	double *I = XYZ_ILLUM, x, y, z, fx, fy, fz;
 	
 	if (L > 8.0) {
 		fy = (L + 16.0)/116.0;
@@ -129,20 +127,18 @@ void Lab2XYZ(double in[], double out[])
 	else
 		z = (fz - 16.0/116.0)/7.787036979;
 	
-	out[0] = x * w[0];
-	out[1] = y * w[1];
-	out[2] = z * w[2];
+	out[0] = x * I[0];
+	out[1] = y * I[1];
+	out[2] = z * I[2];
 }
 
 
-/* CIE XYZ to Luv with specified white point */
+/* CIE (relative) XYZ to Luv */
 void XYZ2Luv(double in[], double out[])
 {
-	double X = in[0], Y = in[1], Z = in[2], *w = XYZ_WPT;
-	double y, un, vn;
-	double L, u, v;
+	double X = in[0], Y = in[1], Z = in[2];
+	double *I = XYZ_ILLUM, y = Y/I[1], L, u, v, un, vn;
 	
-	y = Y/w[1];
 	if (y > 0.008856451586)
 		L = 116.0 * pow(y, 1.0/3.0) - 16.0;
 	else
@@ -151,34 +147,32 @@ void XYZ2Luv(double in[], double out[])
 	u = 4.0 * X/(X + 15.0*Y + 3.0*Z);
 	v = 9.0 * Y/(X + 15.0*Y + 3.0*Z);
 	
-	un = 4.0 * w[0]/(w[0] + 15.0*w[1] + 3.0*w[2]);
-	vn = 9.0 * w[1]/(w[0] + 15.0*w[1] + 3.0*w[2]);
+	un = 4.0 * I[0]/(I[0] + 15.0*I[1] + 3.0*I[2]);
+	vn = 9.0 * I[1]/(I[0] + 15.0*I[1] + 3.0*I[2]);
 	
 	out[0] = L;
 	out[1] = 13.0 * L * (u - un);
 	out[2] = 13.0 * L * (v - vn);
 }
 
-/* Luv with specified white point to CIE XYZ */
+/* Luv to CIE (relative) XYZ */
 void Luv2XYZ(double in[], double out[])
 {
-	double L = in[0], u = in[1], v = in[2], *w = XYZ_WPT;
-	double y, un, vn;
-	double X, Y, Z;
+	double L = in[0], u = in[1], v = in[2];
+	double *I = XYZ_ILLUM, y, un, vn, X, Y, Z;
 	
 	if (L > 8.0)
 		y = pow((L + 16.0)/116.0, 3.0);
 	else
 		y = L/903.2963058;
 	
-	Y = y * w[1];
-	
-	un = 4.0 * w[0]/(w[0] + 15.0*w[1] + 3.0*w[2]);
-	vn = 9.0 * w[1]/(w[0] + 15.0*w[1] + 3.0*w[2]);
+	un = 4.0 * I[0]/(I[0] + 15.0*I[1] + 3.0*I[2]);
+	vn = 9.0 * I[1]/(I[0] + 15.0*I[1] + 3.0*I[2]);
 	
 	u = u / 13.0 / L + un;
 	v = v / 13.0 / L + vn;
 	
+	Y = y * I[1];
 	X = 9.0/4.0 * Y * u/v;
 	Z = 3.0*Y/v - 5.0*Y - X/3.0;
 	
@@ -188,22 +182,22 @@ void Luv2XYZ(double in[], double out[])
 }
 
 
-/* Gray with specified whitepoint to CIE XYZ */
+/* Gray to CIE (relative) XYZ */
 void Gray2XYZ(double *in, double out[])
 {
-	double g = *in, *w = XYZ_WPT;
+	double g = *in, *I = XYZ_ILLUM;
 	
-	out[0] = g * w[0];
-	out[1] = g * w[1];
-	out[2] = g * w[2];
+	out[0] = g * I[0];
+	out[1] = g * I[1];
+	out[2] = g * I[2];
 }
 
-/* CIE XYZ to gray with specified whitepoint */
+/* CIE (relative) XYZ to gray */
 void XYZ2Gray(double in[], double *out)
 {
-	double Y = in[1], *w = XYZ_WPT;
+	double *I = XYZ_ILLUM;
 	
-	*out = Y/w[1];
+	*out = in[1]/I[1];
 }
 
 
@@ -308,7 +302,7 @@ static struct { char *label; const double *wpt, *rgb, g; } primaries_idx[] = {
 };
 
 
-/* Copy illuminant and RGB primaries from array */
+/* Copy white point and RGB primaries from array */
 int LookupPrimaries(char *p, double dest[4][2], double *gamma)
 {
 	int i;
@@ -316,7 +310,7 @@ int LookupPrimaries(char *p, double dest[4][2], double *gamma)
 	for (i = 0; primaries_idx[i].label; i++) {
 		if (strcasecmp(p, primaries_idx[i].label)) continue;
 		
-		if (primaries_idx[i].wpt) {	/* copy illuminant */
+		if (primaries_idx[i].wpt) {	/* copy white point */
 			dest[0][0] = primaries_idx[i].wpt[0];
 			dest[0][1] = primaries_idx[i].wpt[1];
 		}
@@ -345,39 +339,49 @@ int LookupPrimaries(char *p, double dest[4][2], double *gamma)
 /***************** RGB based device dependant spaces ******************/
 
 /* RGB <=> XYZ conversion matrices */
-double M_RGB2XYZ[3][3] = {		/* Adobe/D50 by default */
-	{0.6454, 0.1810, 0.1378},
-	{0.3328, 0.6121, 0.0551},
-	{0.0303, 0.0690, 0.7259}
+double M_RGB2XYZ[3][3] = {		/* Adobe RGB by default */
+	{0.5850, 0.1882, 0.1910},
+	{0.2973, 0.6274, 0.0753},
+	{0.0205, 0.0535, 0.7509}
 };
 
-double M_XYZ2RGB[3][3] = {		/* Adobe/D50 by default */
-	{ 1.8241, -0.5048, -0.3080},
-	{-0.9935,  1.9228,  0.0426},
-	{ 0.0184, -0.1616,  1.3864}
+double M_XYZ2RGB[3][3] = {		/* Adobe RGB by default */
+	{ 2.0125, -0.5650, -0.4551},
+	{-0.9554,  1.8760,  0.0549},
+	{ 0.0133, -0.1184,  1.3403}
 };
 
 
-/* Set illuminant and RGB primaries */
+/* Set white point and RGB primaries */
 void SetPrimaries(double xy[4][2])
 {
+	double E1[3][3], Y[3];
+	
+	/* white point (in absolute XYZ representation) */
+	double W[3] = {
+		        xy[0][0]/xy[0][1],
+		               1.0,
+		 (1.0-xy[0][0]-xy[0][1])/xy[0][1]
+	};
+	
+	/* RGB primaries matrix (in absolute XYZ representation) */
 	double E[3][3] = {
 		{       xy[1][0]/xy[1][1],                xy[2][0]/xy[2][1],                xy[3][0]/xy[3][1]        },
 		{              1.0,                              1.0,                              1.0               },
 		{(1.0-xy[1][0]-xy[1][1])/xy[1][1], (1.0-xy[2][0]-xy[2][1])/xy[2][1], (1.0-xy[3][0]-xy[3][1])/xy[3][1]}
 	};
 	
-	double E1[3][3], Y[3], Yd[3][3];
+	/* relative XYZ scaling factor */
+	double *I = XYZ_ILLUM, S[3] = { I[0]/W[0], I[1]/W[1], I[2]/W[2] };
 	
 	
-	SetWhitePoint(xy[0]);
-	
-	inv33(E, E1);
-	apply33(E1, XYZ_WPT, Y);
-	diag33(Y, Yd);
-	
-	mult33(E, Yd, M_RGB2XYZ);
+	inv33(E, E1); apply33(E1, W, Y);
+	biscale33(S, E, Y, M_RGB2XYZ);
 	inv33(M_RGB2XYZ, M_XYZ2RGB);
+	
+	XYZ_WPT[0] = W[0];
+	XYZ_WPT[1] = W[1];
+	XYZ_WPT[2] = W[2];
 }
 
 
@@ -550,38 +554,6 @@ int channels(icColorSpaceSignature any)
 	return 0;
 }
 
-/* Return default range of values sample can take */
-void range(icColorSpaceSignature any, int channel, double r[])
-{
-	static double Lab[3][2] = {{0.0, 100.0}, {-128.0, 128.0}, {-128.0, 128.0}};
-	static double HSV[3][2] = {{0.0, 360.0}, {0.0, 1.0}, {0.0, 1.0}};
-	
-	switch (any) {
-		case icSigGrayData:
-		case icSigXYZData:
-		case icSigYxyData:
-		case icSigRgbData:
-		case icSigCmyData:
-		case icSigCmykData:
-			r[0] = 0.0;
-			r[1] = 1.0;
-			break;
-		case icSigLabData:
-		case icSigLuvData:
-			r[0] = Lab[channel][0];
-			r[1] = Lab[channel][1];
-			break;
-		case icSigHsvData:
-			r[0] = HSV[channel][0];
-			r[1] = HSV[channel][1];
-			break;
-		default:
-			error("[%s]: Color space not supported",
-				ColorSpaceSignature2str(any));
-	}
-}
-
-
 /* Convert string into ICC color space signature */
 icColorSpaceSignature str2ColorSpaceSignature(char *s)
 {
@@ -724,30 +696,26 @@ double XYZ_dE(double XYZ1[], double XYZ2[])
 /* Jacobian of CIE XYZ -> perceptual Lab transformation */
 void dLab_dXYZ(double XYZ[], double dLab[3][3])
 {
-	double X = XYZ[0], Y = XYZ[1], Z = XYZ[2], *w = XYZ_WPT;
-	double x, y, z, dx, dy, dz;
-	double dL;
+	double *I = XYZ_ILLUM, dx, dy, dz, dL;
+	double x = XYZ[0]/I[0], y = XYZ[1]/I[1], z = XYZ[2]/I[2];
 	
-	x = X/w[0];
 	if (x > 0.008856451586)
-		dx = pow(x, -2.0/3.0)/3.0/w[0];
+		dx = pow(x, -2.0/3.0)/3.0/I[0];
 	else
-		dx = 7.787036979/w[0];
+		dx = 7.787036979/I[0];
 	
-	y = Y/w[1];
 	if (y > 0.008856451586) {
-		dy = pow(y, -2.0/3.0)/3.0/w[1];
+		dy = pow(y, -2.0/3.0)/3.0/I[1];
 		dL = 116.0 * dy;
 	} else {
-		dy = 7.787036979/w[1];
+		dy = 7.787036979/I[1];
 		dL = 903.2963058 * dy;
 	}
 	
-	z = Z/w[2];
 	if (z > 0.008856451586)
-		dz = pow(z, -2.0/3.0)/3.0/w[2];
+		dz = pow(z, -2.0/3.0)/3.0/I[2];
 	else
-		dz = 7.787036979/w[2];
+		dz = 7.787036979/I[2];
 	
 	
 	dLab[0][0] = 0.0;		/* dL/dX */

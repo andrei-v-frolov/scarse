@@ -1,8 +1,8 @@
-/* $Id: matrix.c,v 1.1 2001/01/26 22:45:31 frolov Exp $ */
+/* $Id: matrix.c,v 1.2 2001/06/27 03:58:57 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
- * Matrix operations on 3x3 matrices.
+ * Matrix and vector operations with 3x3 matrices.
  * 
  * Copyright (C) 1999 Scarse Project
  * Distributed under the terms of GNU Public License.
@@ -62,12 +62,26 @@ void apply33(double M[3][3], double A[3], double B[3])
 	B[2] = M[2][0]*A[0]+M[2][1]*A[1]+M[2][2]*A[2];
 }
 
-/* calculate quadratic form q = At*(M*B) */
+/* calculate quadratic form:  q = At*M*B */
 double qform33(double M[3][3], double A[3], double B[3])
 {
 	return	(A[0]*M[0][0]+A[1]*M[1][0]+A[2]*M[2][0])*B[0] +
 		(A[0]*M[0][1]+A[1]*M[1][1]+A[2]*M[2][1])*B[1] +
 		(A[0]*M[0][2]+A[1]*M[1][2]+A[2]*M[2][2])*B[2];
+}
+
+/* bi-scale matrix:  N = diag(A)*M*diag(B) */
+void biscale33(double A[3], double M[3][3], double B[3], double N[3][3])
+{
+	N[0][0] = A[0]*M[0][0]*B[0];
+	N[0][1] = A[0]*M[0][1]*B[1];
+	N[0][2] = A[0]*M[0][2]*B[2];
+	N[1][0] = A[1]*M[1][0]*B[0];
+	N[1][1] = A[1]*M[1][1]*B[1];
+	N[1][2] = A[1]*M[1][2]*B[2];
+	N[2][0] = A[2]*M[2][0]*B[0];
+	N[2][1] = A[2]*M[2][1]*B[1];
+	N[2][2] = A[2]*M[2][2]*B[2];
 }
 
 /* make diagonal matrix:  M = diag(A) */

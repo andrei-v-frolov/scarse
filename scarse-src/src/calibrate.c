@@ -1,4 +1,4 @@
-/* $Id: calibrate.c,v 1.5 2001/06/26 00:09:29 frolov Exp $ */
+/* $Id: calibrate.c,v 1.6 2001/06/27 03:58:55 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -127,10 +127,10 @@ static void scanner_correction(FILE *fp, target *tg)
 				tg->data[i].RGB[0],
 				tg->data[i].RGB[1],
 				tg->data[i].RGB[2],
-				/* XYZ values; map Dmin to white point as per ICC specs */
-				tg->data[i].XYZ[0]/Dmin[0]*XYZ_WPT[0],
-				tg->data[i].XYZ[1]/Dmin[1]*XYZ_WPT[1],
-				tg->data[i].XYZ[2]/Dmin[2]*XYZ_WPT[2],
+				/* XYZ values; map Dmin to PCS illuminant as per ICC specs */
+				tg->data[i].XYZ[0]/Dmin[0]*XYZ_ILLUM[0],
+				tg->data[i].XYZ[1]/Dmin[1]*XYZ_ILLUM[1],
+				tg->data[i].XYZ[2]/Dmin[2]*XYZ_ILLUM[2],
 				/* measured deviation */
 				tg->data[i].RGB[3],
 				tg->data[i].RGB[4],
@@ -179,7 +179,6 @@ int main(int argc, char *argv[])
 		double primaries[4][2];
 		
 		LookupPrimaries("Adobe", primaries, NULL);
-		LookupPrimaries("D50", primaries, NULL);
 		SetPrimaries(primaries);
 	}
 	

@@ -1,4 +1,4 @@
-/* $Id: ipb.c,v 1.5 2001/06/01 03:12:19 frolov Exp $ */
+/* $Id: ipb.c,v 1.6 2001/06/27 03:58:56 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -410,6 +410,40 @@ void read_curve(FILE *fp, int io, curve *c, char *label)
 
 #warning !!! The mess starts here !!!
 
+int within(double **p, int n, double x[])
+{
+	#define D 3
+	
+	int i, j, k;
+	double t, norm = 0.0;
+	double **r = matrix(n, D+1);
+	
+	for (i = 0; i < n; i++) {
+		for (k = 0, norm = 0.0; k < D; k++) {
+			t = r[i][k] = p[i][k] - x[k]; norm += t*t;
+		}
+		
+		r[i][D] = sqrt(norm);
+	}
+	
+	for (i = 0; i < n; i++) for (j = i; j < n; j++) {
+		
+	}
+	
+	free_matrix(r);
+	
+	#undef D
+}
+
+
+
+
+
+
+
+
+
+
 /* Read LUT data */
 	void robust_linear_fit(double **data, int n, double M[3][3]);
 void read_lut(FILE *fp)
@@ -794,7 +828,7 @@ void build_profile(char *file)
     		h->colorSpace      = ins;
     		h->pcs             = outs;
 		
-		/* icclib seems somewhat confused on the relative vs. absolute issue,
+		/* I am somewhat confused on the relative vs. absolute profile issue,
 		   so to be on the safe side, rendering intent is set to perceptual */
     		h->renderingIntent = icPerceptual;
 		
@@ -1131,7 +1165,6 @@ int main(int argc, char *argv[])
 	
 	/* Set default primaries */
 	LookupPrimaries("Adobe", primaries, NULL);
-	LookupPrimaries("D50", primaries, NULL);
 	
 	/* Parse options */
 	while ((c = getopt(argc, argv, "hv-:c:i:o:p:C:UE:MLm:d:r:b:s:")) != -1)
@@ -1296,6 +1329,9 @@ int main(int argc, char *argv[])
 	if (verbose) fprintf(stderr, "%s\n", usage_msg[0]);
 	
 	SetPrimaries(primaries);
+	media_white_pt[0] = XYZ_WPT[0];
+	media_white_pt[1] = XYZ_WPT[1];
+	media_white_pt[2] = XYZ_WPT[2];
 	
 	ins_channels = channels(ins);
 	outs_channels = channels(outs);

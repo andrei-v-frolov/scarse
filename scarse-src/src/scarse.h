@@ -1,4 +1,4 @@
-/* $Id: scarse.h,v 1.3 2001/06/01 03:12:20 frolov Exp $ */
+/* $Id: scarse.h,v 1.4 2001/06/27 03:58:57 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -21,7 +21,7 @@
 #ifndef __SCARSE_H__
 #define __SCARSE_H__
 
-#define DEFAULT_GAMMA 2.5
+#define DEFAULT_GAMMA 2.2
 
 
 /* Calibration targets (targets.c) */
