@@ -1,4 +1,4 @@
-/* $Id: ipb.c,v 1.3 2001/02/05 03:59:40 frolov Exp $ */
+/* $Id: ipb.c,v 1.4 2001/02/15 00:48:04 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -252,7 +252,8 @@ void ctransform(void *cntx, double out[], double in[])
 	if (use_higher_order_approximation)
 		poly_approx(P, t, XYZ); else apply33(L, t, XYZ);
 	
-	if (ELUT) {
+	#warning interpolation in ctransform()
+	if (0 && ELUT) {
 		interp3d(ELUT, XYZ, diff);
 		for (i = 0; i < 3; i++) XYZ[i] += diff[i];
 	}
@@ -275,7 +276,8 @@ void ctransform_1(void *cntx, double out[], double in[])
 	if (use_higher_order_approximation)
 		poly_approx(P1, XYZ, t); else apply33(L1, XYZ, t);
 	
-	if (ELUT_1) {
+	#warning interpolation in ctransform_1()
+	if (0 && ELUT_1) {
 		interp3d(ELUT_1, XYZ, diff);
 		for (i = 0; i < 3; i++) XYZ[i] += diff[i];
 	}
@@ -288,7 +290,7 @@ void ctransform_1(void *cntx, double out[], double in[])
 /******************* Calibration data handling ************************/
 
 /* Read curve data */
-void read_curve(FILE *fp, int io, curve *c)
+void read_curve(FILE *fp, int io, curve *c, char *label)
 {
 	int i;
 	int n = 0, size = 64;
@@ -311,12 +313,14 @@ void read_curve(FILE *fp, int io, curve *c)
 			error("syntax error in curve data");
 		
 		/* small deviations are suspicious */
-		if (fabs(m[2][n]) < 1.0/4096.0) m[2][n] = 1.0;
+		if (fabs(m[2][n]) < 2.5e-4) m[2][n] = 1.0;
 		
 		n++;
 	}
+	free(buffer);
 	
-	/* Check if we got any data */
+	
+	/* Fit curve data */
 	if (!n) error("No curve data supplied");
 	
 	if (verbose > 1) {
@@ -341,7 +345,43 @@ void read_curve(FILE *fp, int io, curve *c)
 					"\t Range [%12.10g .. %12.10g]; Chi2 = %12.10g)\n",
 					c->fit[0], c->fit[2], c->fit[1], c->fit[3], c->fit[4], c->fit[5]);
 	}
-	free(buffer);
+	
+	
+	/* Plot curve fit and data */
+	#ifdef PGPLOT
+	{
+		#define PTS 256
+		float x[PTS], y[PTS], y1[PTS], y2[PTS];
+		
+		/* frame and labels */
+		cpgsci(5); cpgenv(0.0, 1.0, 0.0, 1.0, 1, 1);
+		cpglab("(target)", "(sample)", label);
+		
+		/* fitted curve */
+		for (i = 0; i < PTS; i++) {
+			y[i] = i/(PTS-1.0);
+			x[i] = lu_curve(c->fit, y[i]);
+		}
+		cpgsci(2); cpgline(PTS, x, y);
+		
+		/* range */
+		x[0] = 0.0; x[1] = 1.0; cpgsci(4);
+		y[0] = y[1] = c->fit[3]; cpgline(2, x, y);
+		y[0] = y[1] = c->fit[4]; cpgline(2, x, y);
+		
+		/* data points and error bars */
+		for (i = 0; i < n; i++) {
+			x[i] = m[0][i];
+			y[i] = m[1][i];
+			y1[i] = y[i] - 3.0*m[2][i];
+			y2[i] = y[i] + 3.0*m[2][i];
+		}
+		cpgsci(3); cpgpt(n, x, y, 9);
+		cpgerry(n, x, y1, y2, 1.0);
+		
+		#undef PTS
+	}
+	#endif /* PGPLOT */
 }
 
 /* Read LUT data */
@@ -355,7 +395,7 @@ void read_lut(FILE *fp, void **part, void **ipart)
 	char *label, *p, *np;
 	char *buffer = (char *)xmalloc(bsize);
 	double ip[MAXCHANNELS], op[MAXCHANNELS], tp[MAXCHANNELS];
-	double e = 0.0, dE[3] = {0.0 /* max */, 1.0e12 /* min */, 0.0 /* avg */};
+	double e = 0.0, dE[3] = {0.0 /* max */, HUGE /* min */, 0.0 /* avg */};
 	
 	
 	/* Read LUT data */
@@ -537,6 +577,35 @@ void read_lut(FILE *fp, void **part, void **ipart)
 	}
 	
 	free(buffer);
+	
+	
+	/* Plot curve fit and data */
+	#ifdef PGPLOT
+	{
+		int k;
+		#define PTS 512
+		float x[PTS], y[PTS];
+		
+		/* frame and labels */
+		cpgsci(5); cpgenv(0.0, 1.0, 0.0, 1.0, 1, 1);
+		cpglab("(target)", "(sample)", "XXX");
+		
+		/* data points and error bars */
+		for (k = 0; k < 3; k++) {
+			for (i = 0, j = 0; j < cdp; i++, j += 6) {
+				incurves(NULL, ip, &(cdv[j]));
+				outcurves_1_expanded(NULL, op, &(cdv[j+3]));
+				ctransform_1(NULL, tp, op);
+				
+				x[i] = tp[k];
+				y[i] = ip[k];
+			}
+			cpgsci(2+k); cpgpt(i, x, y, 0);
+		}
+		
+		#undef PTS
+	}
+	#endif /* PGPLOT */
 }
 
 
@@ -555,27 +624,15 @@ void read_calibration_data(FILE *fp)
 		if (*buffer == '#') continue;
 		
 		if ((p = strstr(buffer, "WHITEPOINT:"))) {
-			char *p1 = p + 11, *p2, *p3, *np;
-			
 			if (verbose > 1) fprintf(stderr, "\t%s\n", buffer);
 			
-			media_white_pt[0] = strtod(p1, &p2);
-			media_white_pt[1] = strtod(p2, &p3);
-			media_white_pt[2] = strtod(p3, &np);
-			
-			if ((p2 == p1) || (p3 == p2) || (np == p3))
+			if (sscanf(p+11, "%lf %lf %lf", media_white_pt, media_white_pt+1, media_white_pt+2) != 3)
 				error("syntax error in whitepoint data");
 			
 		} else if ((p = strstr(buffer, "BLACKPOINT:"))) {
-			char *p1 = p + 11, *p2, *p3, *np;
-			
 			if (verbose > 1) fprintf(stderr, "\t%s\n", buffer);
 			
-			media_black_pt[0] = strtod(p1, &p2);
-			media_black_pt[1] = strtod(p2, &p3);
-			media_black_pt[2] = strtod(p3, &np);
-			
-			if ((p2 == p1) || (p3 == p2) || (np == p3))
+			if (sscanf(p+11, "%lf %lf %lf", media_black_pt, media_black_pt+1, media_black_pt+2) != 3)
 				error("syntax error in blackpoint data");
 			
 		} else if (sscanf(buffer, "CURVE IN%i", &i) == 1) {
@@ -585,7 +642,7 @@ void read_calibration_data(FILE *fp)
 				else fflush(stderr);
 			}
 			
-			read_curve(fp, 1 /*in*/, &(ins_curves[i]));
+			read_curve(fp, 1 /*in*/, &(ins_curves[i]), buffer);
 			use_ins_curves |= 1 << i;
 			
 		} else if (sscanf(buffer, "CURVE OUT%i", &i) == 1) {
@@ -595,7 +652,7 @@ void read_calibration_data(FILE *fp)
 				else fflush(stderr);
 			}
 			
-			read_curve(fp, 0 /*out*/, &(outs_curves[i]));
+			read_curve(fp, 0 /*out*/, &(outs_curves[i]), buffer);
 			use_outs_curves |= 1 << i;
 			
 		} else if (strstr(buffer, "LUT:")) {
@@ -791,51 +848,6 @@ void build_profile(char *file)
 		
 		if (verbose > 2 && rv)
 			warning("%s: warning: RGB curves were clipped", file);
-		
-		
-		#ifdef PGPLOT /* plot RGB curves */
-			for (i = 0; i < 3; i++) {
-				int j, size = (use_ins_curves && ins_curves[i].n > lut_size_1d) ? ins_curves[i].n : lut_size_1d;
-				float x[size], y[size], y1[size], y2[size];
-				double *c[3] = {r->data, g->data, b->data};
-				
-				static char *label[3] = {
-					"CURVE IN0 (red):",
-					"CURVE IN1 (green):",
-					"CURVE IN2 (blue):"
-				};
-				
-				
-				/* frame and labels */
-				cpgsci(5); cpgenv(0.0, 1.0, 0.0, 1.0, 1, 1);
-				cpglab("(target)", "(sample)", label[i]);
-				
-				/* profile curves */
-				for (j = 0; j < lut_size_1d; j++) {
-					x[j] = c[i][j];
-					y[j] = j/(lut_size_1d-1.0);
-					
-				}
-				cpgsci(2); cpgline(lut_size_1d, x, y);
-				
-				if (use_ins_curves) {
-					/* range */
-					x[0] = 0.0; x[1] = 1.0; cpgsci(4);
-					y[0] = y[1] = ins_curves[i].fit[3]; cpgline(2, x, y);
-					y[0] = y[1] = ins_curves[i].fit[4]; cpgline(2, x, y);
-					
-					/* data points and error bars */
-					for (j = 0; j < ins_curves[i].n; j++) {
-						x[j] = ins_curves[i].data[0][j];
-						y[j] = ins_curves[i].data[1][j];
-						y1[j] = y[j] - 3.0*ins_curves[i].data[2][j];
-						y2[j] = y[j] + 3.0*ins_curves[i].data[2][j];
-					}
-					cpgsci(3); cpgpt(ins_curves[i].n, x, y, 9);
-					cpgerry(ins_curves[i].n, x, y1, y2, 1.0);
-				}
-			}
-		#endif /* PGPLOT */
 	}
 	
 	
