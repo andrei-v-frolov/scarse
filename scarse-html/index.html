@@ -1,4 +1,4 @@
-<!-- $Id: index.html,v 1.5 2000/08/01 03:52:47 andrei Exp $ -->
+<!-- $Id: index.html,v 1.6 2000/09/21 12:19:59 andrei Exp $ -->
 <HTML><HEAD><TITLE>Scarse Project Homepage</TITLE></HEAD>
 
 <META NAME="description" CONTENT="open source color calibration and
@@ -33,18 +33,19 @@ Scanner CAlibration ReaSonably Easy</H1>
 
 Scarse project is currently <EM>under development</EM>. Beta-testers
 and developers are sorely needed. I cannot do everything myself, I have
-a day job :). If you interested and want to help, please contact me. My
-email is all over this pages.
+a day job :). If you are interested and want to help, please contact me.
+My email is all over this pages.
 <BR CLEAR=left><HR>
 
 
 <H2 ALIGN=center><IMG SRC="alert.gif"> <FONT COLOR=red>Newsflash!</FONT> <IMG SRC="alert.gif"></H2>
 
-<P><B>06/07/2000</B>:
-Nasty bug in icclib found and fixed. All version 0.2-alpha users should
-<A HREF="http://download.sourceforge.net/scarse/icclib-1.21-bugfix.gz">
-patch their icclib</A> now, rather than wait for 0.3 release. The bug
-affects both accuracy and speed of reverse curve lookups.
+<P><B>09/20/2000</B>:
+After a long wait, release <A
+HREF="http://download.sourceforge.net/scarse/scarse-0.3-alpha.tar.gz">
+0.3-alpha</A> is finally out! Highlights include support for negative
+film, much more flexible calibration data handling, and improved
+profile generation algorithm.
 
 <P><HR ALIGN=center WIDTH=15%>
 
@@ -121,8 +122,15 @@ HREF="docs/kodak/Q60-order.pdf">available from Kodak</A> in 35mm and
 <A HREF="http://www.targets.coloraid.de/">5x7 reflective IT8.7
 targets</A> on Fuji paper, which he sells quite cheaply. Other standard
 calibration targets, such as MacBeth Color Checker and Kodak Color
-Separation Guide Q13 & Q14 (grayscale only), are also supported. Scans
-from negatives are not directly supported yet.
+Separation Guide Q13 & Q14 (grayscale only), are also supported.
+
+<P>
+You cannot calibrate scanner for negative film the same way you can do
+it with slides, because of the variations in negatives on per-exposure
+basis. Scarse provides automatic color adjustment which will normalize
+scan of a negative to roughly correct levels and contrast, and you can
+work from there. Printing negatives is more of a subjective thing, and
+some decisions are better left to a human.
 
 <P>
 As far as results go, <A HREF="images/sample/">see for yourself</A>,
@@ -150,10 +158,8 @@ me, let's talk about...
 
 <P>
 Latest release of Scarse is
-<A HREF="http://download.sourceforge.net/scarse/scarse-0.2-alpha.tar.gz">
-0.2-alpha</A> (don't forget to apply
-<A HREF="http://download.sourceforge.net/scarse/icclib-1.21-bugfix.gz">
-icclib bugfix patch</A>!). Along with the earlier releases, it can be
+<A HREF="http://download.sourceforge.net/scarse/scarse-0.3-alpha.tar.gz">
+0.3-alpha</A>. Along with the earlier releases, it can be
 downloaded from <A HREF="http://www.sourceforge.net/">SourceForge</A>
 servers
 

@@ -1,6 +1,41 @@
 Scarse (Scanner CAlibration ReaSonably Easy)  --  change log
 ============================================================
 
+Version 0.3-alpha
+  ** icclib updated to the latest version (v1.23 of 99/11/29)
+  ** Nasty bug in icclib curve lookup code found and fixed;
+     re-implementation resulted in enormous speed-ups!
+  ** New object-oriented image IO wrapper library with:
+      - support for TIFF and PPM (read-only)
+      - cleaner and much more efficient implementation
+      - correct packing of Lab TIFF files
+      - new and exciting bugs :)
+  ** User-defined option macros (long options) added to all commands
+  ** Lots of improvements to cmap:
+      - profile embedding support (requires libtiff v3.5)
+      - option to generate preview (scaled-down) image
+      - out of gamut warning with clipped pixel counter
+      - a number of color adjustment options added
+        (levels, curves, split contrast, center filter)
+      - automatic adjustment algorithms to handle negative film
+  ** calibrate has been almost completely rewritten; changes include:
+      - new parser for IT8.7 files; target data is not precompiled anymore
+      - target data files are now installed in a separate directory tree
+      - user-supplied IT8.7 data files can be used with -b and -t
+      - media Dmin is now mapped to white point as per ICC specs
+      - pixel averaging changed to median-bracketed mean
+      - display calibration code was not doing anything useful,
+        and was removed to avoid confusion - run ipb directly instead
+  ** Accuracy of ipb profile generation algorithm is significantly improved:
+      - parameter fit is now with respect to perceptual metric
+      - better polynomial fit is used if enough data is available
+      - added an option to expand shadow portion of LUT
+      - fixed a bug in interpolation code which was shifting blacks
+      - added profile testing and error measurement code
+  ** Sorted out RGB primaries mess - we are now in sync with Photoshop
+  ** Default RGB space changed to Adobe RGB primaries/D50 white point
+  ** Added recent Kodak calibration data files to distribution
+
 Version 0.2-alpha
   ** Added support for Kodak Q13, Q14 and similar grayscale targets
   ** Added support for Gretag-MacBeth Color Checker calibration target

@@ -4,11 +4,8 @@ Scarse (Scanner CAlibration ReaSonably Easy)  --  to do list
 To do next:
 ===========
 
-  -- Add color negative film calibration support
   -- Add display and printer calibration support
   -- Write GUI frontend to calibrate (using Gtk) - any takers?
-  -- Implement profile embedding support in cmap
-  -- Write some image tweaking tools (contrast & unsharp masks, etc)
   -- Update makefiles to use GNU Autoconf
   -- Write up documentation
 
