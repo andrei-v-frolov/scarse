@@ -1,4 +1,4 @@
-/* $Id: spaces.c,v 1.1 2001/01/26 22:45:31 frolov Exp $ */
+/* $Id: spaces.c,v 1.2 2001/02/05 01:21:44 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -29,8 +29,6 @@
 
 #include "spaces.h"
 #include "util.h"
-
-#define ppow(x,g) ((x > 0.0) ? pow(x, g) : -pow(-x, g))
 
 
 

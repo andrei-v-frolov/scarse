@@ -1,4 +1,4 @@
-/* $Id: util.h,v 1.2 2001/01/28 02:23:20 frolov Exp $ */
+/* $Id: util.h,v 1.3 2001/02/05 01:21:43 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -21,6 +21,8 @@
 #define __UTIL_H__
 
 #define TINY 1.0e-8
+
+#define ppow(x,g) ((x > 0.0) ? pow(x, g) : -pow(-x, g))
 
 
 /* Utility routines (util.c) */
@@ -84,8 +86,20 @@ void diag33(double A[3], double M[3][3]);
 
 /* Data fitting and approximation routines (fit.c) */
 
+void gaussj(double **A, int n, double **B, int m);
+
+double **new_amoeba(double x[], int n, double (*func)(double []), double lambda);
+void restart_amoeba(double **S, int n, double (*func)(double []), double lambda);
+void anneal(double **S, int n, double (*func)(double []), double T0, int maxsteps, double tol);
+
 double **best_fit(double **x, int n, void (*basis)(double [], double []), int d);
 void approx(double **A, void (*basis)(double [], double []), int d, double x[], double y[]);
+
+double *fit_curve(double **data, int n);
+int within_range(double p[], double y);
+double curve(double p[], double y);
+double curve_1(double p[], double x);
+double curve_dydx(double p[], double x);
 
 void best_linear_fit(double **x, int n, double M[3][3]);
 
