@@ -1,4 +1,4 @@
-/* $Id: targets.c,v 1.3 2001/01/28 02:23:20 frolov Exp $ */
+/* $Id: targets.c,v 1.4 2001/02/02 20:53:41 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -697,7 +697,7 @@ void render_IT87_target(target *tg, char *file, char *geometry)
 /* Read IT8.7 target data from raster image */
 void read_IT87_target(target *tg, char *file, char *geometry)
 {
-	int i, j, r, c;
+	int i, r, c;
 	int *xidx, *yidx;
 	unsigned long x, y;
 	double p[3], deviation;
