@@ -1,4 +1,4 @@
-/* $Id: ipb.c,v 1.2 2001/01/29 03:44:29 frolov Exp $ */
+/* $Id: ipb.c,v 1.3 2001/02/05 03:59:40 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -131,16 +131,13 @@ static double             outs_gamma = 1.0;
 static transform            outs2XYZ = NULL,
                             XYZ2outs = NULL;
 
+typedef struct { int n; double **data, *fit; } curve;
+
 static int	use_ins_curves = 0,
 		use_outs_curves = 0;
 
-static int	ins_curves_n[MAXCHANNELS],
-		outs_curves_n[MAXCHANNELS];
-
-static double	**ins_curves[MAXCHANNELS],
-		**ins_curves_1[MAXCHANNELS],
-		**outs_curves[MAXCHANNELS],
-		**outs_curves_1[MAXCHANNELS];
+static curve	ins_curves[MAXCHANNELS],
+		outs_curves[MAXCHANNELS];
 
 static int          calibration_data_pts = 0;
 static double	*calibration_data_vector = NULL;
@@ -158,13 +155,22 @@ static double	**P = NULL, **P1 = NULL;
 static void	*ELUT = NULL, *ELUT_1 = NULL;
 
 
-/* Translate data through curve */
-void xlate_curve(double in[], double out[], int channels, double **m[], int n[])
+/* Translate data through curves */
+void xlate_curve(double in[], double out[], int channels, curve c[])
 {
 	int i;
 	
 	for (i = 0; i < channels; i++)
-		out[i] = interp1d(m[i], n[i], in[i]);
+		out[i] = lu_curve(c[i].fit, in[i]);
+}
+
+/* Translate data through curves */
+void xlate_curve_1(double in[], double out[], int channels, curve c[])
+{
+	int i;
+	
+	for (i = 0; i < channels; i++)
+		out[i] = lu_curve_1(c[i].fit, in[i]);
 }
 
 
@@ -172,7 +178,7 @@ void xlate_curve(double in[], double out[], int channels, double **m[], int n[])
 void incurves(void *cntx, double out[], double in[])
 {
 	if (use_ins_curves)
-		xlate_curve(in, out, ins_channels, ins_curves, ins_curves_n);
+		xlate_curve(in, out, ins_channels, ins_curves);
 	else if (ins_gamma != 1.0)
 		gamma_scale(in, out, ins_channels, ins_gamma);
 	else
@@ -192,7 +198,7 @@ void incurves_expanded(void *cntx, double out[], double in[])
 void incurves_1(void *cntx, double out[], double in[])
 {
 	if (use_ins_curves)
-		xlate_curve(in, out, ins_channels, ins_curves_1, ins_curves_n);
+		xlate_curve_1(in, out, ins_channels, ins_curves);
 	else if (ins_gamma != 1.0)
 		gamma_scale(in, out, ins_channels, 1.0/ins_gamma);
 	else
@@ -203,7 +209,7 @@ void incurves_1(void *cntx, double out[], double in[])
 void outcurves(void *cntx, double out[], double in[])
 {
 	if (use_outs_curves)
-		xlate_curve(in, out, outs_channels, outs_curves, outs_curves_n);
+		xlate_curve_1(in, out, outs_channels, outs_curves);
 	else if (outs_gamma != 1.0)
 		gamma_scale(in, out, outs_channels, 1.0/outs_gamma);
 	else
@@ -214,7 +220,7 @@ void outcurves(void *cntx, double out[], double in[])
 void outcurves_1(void *cntx, double out[], double in[])
 {
 	if (use_outs_curves)
-		xlate_curve(in, out, outs_channels, outs_curves_1, outs_curves_n);
+		xlate_curve(in, out, outs_channels, outs_curves);
 	else if (outs_gamma != 1.0)
 		gamma_scale(in, out, outs_channels, outs_gamma);
 	else
@@ -279,181 +285,18 @@ void ctransform_1(void *cntx, double out[], double in[])
 
 
 
-/******************* Gamut constraint checking ************************/
-
-/* Device gamut constrains */
-static int	ins_gamut_constrained = 0,
-		outs_gamut_constrained = 0;
-
-static double	ins_gamut[2], outs_gamut[2];
-
-
-/* Initialize gamut constraint to slightly bigger than default range */
-void init_gamut_constraint(icColorSpaceSignature space, double *gmt)
-{
-	if (space != icSigHsvData)
-		range(space, 0, gmt);
-	else
-		range(space, 2, gmt);
-	
-	gmt[0] = 1.1*gmt[0] - 0.1;
-	gmt[1] = 1.1*gmt[1] + 0.1;
-}
-
-/* Return gamut constraints on a channel of color space */
-double *gamut_constraint(icColorSpaceSignature space, int channel, double *gmt)
-{
-	switch (space) {
-		case icSigGrayData:
-		case icSigXYZData:
-		case icSigRgbData:
-		case icSigCmyData:
-		case icSigCmykData:
-			return gmt;
-		case icSigYxyData:
-		case icSigLabData:
-		case icSigLuvData:
-			return channel == 0 ? gmt : NULL;
-		case icSigHsvData:
-			return channel == 2 ? gmt : NULL;
-		default:
-			error("[%s]: Color space not supported",
-				ColorSpaceSignature2str(space));
-	}
-	
-	return NULL;
-}
-
-/* Check if pixel color satisfies gamut constraint */
-int in_gamut(icColorSpaceSignature space, double gmt[], double p[])
-{
-	switch (space) {
-		case icSigGrayData:
-		case icSigYxyData:
-		case icSigLabData:
-		case icSigLuvData:
-			return (p[0] > gmt[0]) && (p[0] < gmt[1]);
-		case icSigXYZData:
-		case icSigRgbData:
-		case icSigCmyData:
-			return  (p[0] > gmt[0]) && (p[0] < gmt[1]) &&
-				(p[1] > gmt[0]) && (p[1] < gmt[1]) &&
-				(p[2] > gmt[0]) && (p[2] < gmt[1]);
-		case icSigCmykData:
-			return  (p[0] > gmt[0]) && (p[0] < gmt[1]) &&
-				(p[1] > gmt[0]) && (p[1] < gmt[1]) &&
-				(p[2] > gmt[0]) && (p[2] < gmt[1]) &&
-				(p[3] > gmt[0]) && (p[3] < gmt[1]);
-		case icSigHsvData:
-			return (p[2] > gmt[0]) && (p[2] < gmt[1]);
-		default:
-			error("[%s]: Color space not supported",
-				ColorSpaceSignature2str(space));
-	}
-	
-	return -1;
-}
-
-
-
 /******************* Calibration data handling ************************/
 
-/* Handle possible degeneracy in curve data */
-int degenerate(int *nptr, double **m, int io, double gmt[])
-{
-	int j, k, kl = -1, ku = -1, n = *nptr;
-	int *eq = ivector(n), *dg = ivector(n);
-	double *x = vector(n), *y = vector(n);
-	double a = gmt ? gmt[0] : -0.1, b = gmt ? gmt[1] : 1.1, c;
-	
-	#define EEQUIV(a,b) (fabs(a-b) < 2.0e-4/n)
-	#define EQUIV(i,j) (EEQUIV(m[0][i],m[0][j]) || EEQUIV(m[1][i],m[1][j]))
-	
-	/* Build equivalence class table */
-	for (j = 0; j < n; j++) {
-		eq[j] = j;
-		
-		for (k = 0; k < j; k++) {
-			eq[k] = eq[eq[k]];
-			if (EQUIV(j,k)) eq[eq[eq[k]]] = j;
-		}
-	}
-	
-	for (j = 0; j < n; j++) eq[j] = eq[eq[j]];
-	
-	/* Combine points within the same equivalence class */
-	for (j = 0; j < n; j++) {
-		dg[j] = 0;
-		x[j] = 0.0;
-		y[j] = 0.0;
-	}
-	
-	for (j = 0; j < n; j++) {
-		dg[eq[j]]++;
-		x[eq[j]] += m[0][j];
-		y[eq[j]] += m[1][j];
-	}
-	
-	/* Remove degeneracy and write out corrected data */
-	k = 0;
-	for (j = 0; j < n; j++) if (dg[j]) {
-		if (dg[j] == 1) {
-			m[0][k] = x[j];
-			m[1][k] = y[j];
-		} else {
-			m[0][k] = x[j]/dg[j];
-			m[1][k] = y[j]/dg[j];
-			
-			if (gmt) {
-				c = m[io][k];
-				
-				if ((c > a) && (c-a < b-c)) { a = c; kl = k; }
-				if ((c < b) && (b-c < c-a)) { b = c; ku = k; }
-			}
-		}
-		
-		k++;
-	}
-	*nptr = k;
-	
-	/* Return gamut bounds of non-singular data if requested */
-	if (gmt && k != n) {
-		unsigned long *idx = uvector(k), *rnk = uvector(k);
-		
-		indexx(k, m[io], idx); rank(k, idx, rnk);
-		
-		if (kl != -1) { j = rnk[kl]; gmt[0] = (m[io][kl] + m[io][idx[j<k-1 ? j+1 : j]])/2.0; }
-		if (ku != -1) { j = rnk[ku]; gmt[1] = (m[io][ku] + m[io][idx[j>0 ? j-1 : j]])/2.0; }
-		
-		if (verbose > 3)
-			fprintf(stderr, "\t\t(%12.10g, %12.10g) regular gamut range\n", gmt[0], gmt[1]);
-		
-		free_vector(idx);
-		free_vector(rnk);
-	}
-	
-	free_vector(eq);
-	free_vector(dg);
-	free_vector(x);
-	free_vector(y);
-	
-	return k != n;
-	
-	#undef EEQUIV
-	#undef EQUIV
-}
-
 /* Read curve data */
-int read_curve(FILE *fp, int io, int curve, double ***m, double ***im)
+void read_curve(FILE *fp, int io, curve *c)
 {
 	int i;
-	char *p, *np;
 	int n = 0, size = 64;
+	double **m = matrix(3, size);
+	
 	size_t bsize = 128;
 	char *buffer = (char *)xmalloc(bsize);
 	
-	
-	*m = matrix(4, size);
 	
 	/* Read curve data */
 	while (getline(&buffer, &bsize, fp) != -1) {
@@ -461,13 +304,14 @@ int read_curve(FILE *fp, int io, int curve, double ***m, double ***im)
 		if (*buffer == ';') break;
 		
 		if (n >= size)
-			*m = grow_matrix(*m, 4, size<<=1);
+			m = grow_matrix(m, 3, size<<=1);
 		
-		(*m)[0][n] = strtod(buffer, &p);
-		(*m)[1][n] = strtod(p, &np);
-		
-		if ((p == buffer) || (np == p))
+		m[0][n] = m[1][n] = m[2][n] = 0.0;
+		if (sscanf(buffer, "%lf %lf %lf", &(m[io?1:0][n]), &(m[io?0:1][n]), &(m[2][n])) < 2)
 			error("syntax error in curve data");
+		
+		/* small deviations are suspicious */
+		if (fabs(m[2][n]) < 1.0/4096.0) m[2][n] = 1.0;
 		
 		n++;
 	}
@@ -475,37 +319,29 @@ int read_curve(FILE *fp, int io, int curve, double ***m, double ***im)
 	/* Check if we got any data */
 	if (!n) error("No curve data supplied");
 	
-	/* Check for degeneracy */
-	if (degenerate(&n, *m, io, gamut_constraint(io == 0 ? ins : outs, curve,
-						    io == 0 ? ins_gamut : outs_gamut))) {
-		warning("Degenerate calibration data, doing my best to cope...");
-		
-		(io == 0 ? ins_gamut_constrained : outs_gamut_constrained) = 1;
-	}
-	
-	/* Prepare curve data for interpolation */
-	*im = matrix(4, size);
-	
-	for (i = 0; i < n; i++) {
-		(*im)[0][i] = (*m)[1][i];
-		(*im)[1][i] = (*m)[0][i];
-	}
-	
 	if (verbose > 1) {
 		if (verbose > 3)
 		    for (i = 0; i < n; i++)
-			fprintf(stderr, "\t\t%12.10g %12.10g\n", (*m)[0][i], (*m)[1][i]);
+			fprintf(stderr, "\t\t%12.10g %12.10g \t(%12.10g)\n",
+				m[0][i], m[1][i], m[2][i]);
 		
-		fprintf(stderr, "\t%i points, prepping for interpolation...", n);
+		fprintf(stderr, "\t%i points, fitting curve...", n);
 		fflush(stderr);
 	}
 	
-	derivs(*m, n); derivs(*im, n);
+	c->n = n;
+	c->data = m;
+	c->fit = fit_curve(m, n);
 	
-	if (verbose > 1) fprintf(stderr, " done.\n");
+	if (verbose > 1) {
+		fprintf(stderr, " done.\n");
+		
+		if (verbose > 3)
+			fprintf(stderr, "\t(Best fit: y = %12.10g * x^%12.10g + %12.10g;\n"
+					"\t Range [%12.10g .. %12.10g]; Chi2 = %12.10g)\n",
+					c->fit[0], c->fit[2], c->fit[1], c->fit[3], c->fit[4], c->fit[5]);
+	}
 	free(buffer);
-	
-	return n;
 }
 
 /* Read LUT data */
@@ -556,13 +392,15 @@ void read_lut(FILE *fp, void **part, void **ipart)
 			cdv[cdp++] = op[i];
 		}
 		
-		/* Check that the data point is inside gamut constraints */
+		#warning DO GAMUT CHECK
+		/* Check that the data point is inside gamut constraints 
 		if ((ins_gamut_constrained && !in_gamut(ins, ins_gamut, ip)) ||
 		    (outs_gamut_constrained && !in_gamut(outs, outs_gamut, op))) {
 			if (verbose > 3)
 				fprintf(stderr, "%20s  outside of gamut bounds, skipping!\n", label);
 			continue;
 		}
+		*/
 		
 		/* Process LUT data point */
 		if (n+4 >= size)
@@ -711,9 +549,6 @@ void read_calibration_data(FILE *fp)
 	
 	if (verbose) fprintf(stderr, "Reading calibration data...\n");
 	
-	init_gamut_constraint(ins, ins_gamut);
-	init_gamut_constraint(outs, outs_gamut);
-	
 	while (getline(&buffer, &bsize, fp) != -1) {
 		buffer[strlen(buffer)-1] = 0;
 		
@@ -750,7 +585,7 @@ void read_calibration_data(FILE *fp)
 				else fflush(stderr);
 			}
 			
-			ins_curves_n[i] = read_curve(fp, 0 /*in*/, i, &(ins_curves[i]), &(ins_curves_1[i]));
+			read_curve(fp, 1 /*in*/, &(ins_curves[i]));
 			use_ins_curves |= 1 << i;
 			
 		} else if (sscanf(buffer, "CURVE OUT%i", &i) == 1) {
@@ -760,7 +595,7 @@ void read_calibration_data(FILE *fp)
 				else fflush(stderr);
 			}
 			
-			outs_curves_n[i] = read_curve(fp, 1 /*out*/, i, &(outs_curves[i]), &(outs_curves_1[i]));
+			read_curve(fp, 0 /*out*/, &(outs_curves[i]));
 			use_outs_curves |= 1 << i;
 			
 		} else if (strstr(buffer, "LUT:")) {
@@ -960,9 +795,9 @@ void build_profile(char *file)
 		
 		#ifdef PGPLOT /* plot RGB curves */
 			for (i = 0; i < 3; i++) {
-				int j, size = (use_ins_curves && ins_curves_n[i] > lut_size_1d) ? ins_curves_n[i] : lut_size_1d;
-				float x[size], y[size];
-				double *curve[3] = {r->data, g->data, b->data};
+				int j, size = (use_ins_curves && ins_curves[i].n > lut_size_1d) ? ins_curves[i].n : lut_size_1d;
+				float x[size], y[size], y1[size], y2[size];
+				double *c[3] = {r->data, g->data, b->data};
 				
 				static char *label[3] = {
 					"CURVE IN0 (red):",
@@ -970,22 +805,34 @@ void build_profile(char *file)
 					"CURVE IN2 (blue):"
 				};
 				
+				
+				/* frame and labels */
 				cpgsci(5); cpgenv(0.0, 1.0, 0.0, 1.0, 1, 1);
 				cpglab("(target)", "(sample)", label[i]);
 				
+				/* profile curves */
 				for (j = 0; j < lut_size_1d; j++) {
-					x[j] = curve[i][j];
+					x[j] = c[i][j];
 					y[j] = j/(lut_size_1d-1.0);
 					
 				}
-				cpgsci(1); cpgline(lut_size_1d, x, y);
+				cpgsci(2); cpgline(lut_size_1d, x, y);
 				
 				if (use_ins_curves) {
-					for (j = 0; j < ins_curves_n[i]; j++) {
-						x[j] = ins_curves[i][1][j];
-						y[j] = ins_curves[i][0][j];
+					/* range */
+					x[0] = 0.0; x[1] = 1.0; cpgsci(4);
+					y[0] = y[1] = ins_curves[i].fit[3]; cpgline(2, x, y);
+					y[0] = y[1] = ins_curves[i].fit[4]; cpgline(2, x, y);
+					
+					/* data points and error bars */
+					for (j = 0; j < ins_curves[i].n; j++) {
+						x[j] = ins_curves[i].data[0][j];
+						y[j] = ins_curves[i].data[1][j];
+						y1[j] = y[j] - 3.0*ins_curves[i].data[2][j];
+						y2[j] = y[j] + 3.0*ins_curves[i].data[2][j];
 					}
-					cpgsci(3); cpgpt(ins_curves_n[i], x, y, 9);
+					cpgsci(3); cpgpt(ins_curves[i].n, x, y, 9);
+					cpgerry(ins_curves[i].n, x, y1, y2, 1.0);
 				}
 			}
 		#endif /* PGPLOT */

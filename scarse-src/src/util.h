@@ -1,4 +1,4 @@
-/* $Id: util.h,v 1.3 2001/02/05 01:21:43 frolov Exp $ */
+/* $Id: util.h,v 1.4 2001/02/05 03:59:41 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -97,8 +97,8 @@ void approx(double **A, void (*basis)(double [], double []), int d, double x[], 
 
 double *fit_curve(double **data, int n);
 int within_range(double p[], double y);
-double curve(double p[], double y);
-double curve_1(double p[], double x);
+double lu_curve(double p[], double y);
+double lu_curve_1(double p[], double x);
 double curve_dydx(double p[], double x);
 
 void best_linear_fit(double **x, int n, double M[3][3]);

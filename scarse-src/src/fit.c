@@ -1,4 +1,4 @@
-/* $Id: fit.c,v 1.2 2001/02/05 01:21:43 frolov Exp $ */
+/* $Id: fit.c,v 1.3 2001/02/05 03:59:40 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -193,7 +193,7 @@ static void shrink(double **S, int n, double (*func)(double []), double T, int d
 /* Minimize the function by simulated annealing */
 void anneal(double **S, int n, double (*func)(double []), double T0, int maxsteps, double tol)
 {
-	int i, j, k, lo, hi;
+	int i, k, lo, hi;
 	double T, y, ylo, yhi, yhi2;
 	
 	for (k = 0; k < maxsteps; ) {
@@ -229,13 +229,6 @@ void anneal(double **S, int n, double (*func)(double []), double T0, int maxstep
 			if (y >= yhi2) { shrink(S, n, func, T, lo, 0.5); k += n; }
 		}
 	}
-		printf("\nT = %g\n", T);
-		for (i = 0; i <= n+2; i++) {
-			for (j = 0; j <= n; j++) printf("%12.8g\t", S[i][j]);
-			printf("\n");
-		}
-		
-		
 }
 
 
@@ -265,10 +258,10 @@ static double chi2(double p[])
 {
 	double t, s = 0.0;
 	int i, n = _curve_pts_;
-	double *x = _curve_data_[0], *y = _curve_data_[1];
+	double *x = _curve_data_[0], *y = _curve_data_[1], *dy = _curve_data_[2];
 	
 	for (i = 0; i < n; i++) {
-		t = y[i] - model(p, x[i]); s += t*t;
+		t = (y[i] - model(p, x[i]))/dy[i]; s += t*t;
 	}
 	
 	/* Penalty for saturation points wandering outside range */
@@ -288,11 +281,11 @@ double *fit_curve(double **data, int n)
 	_curve_data_ = data; _curve_pts_ = n;
 	p[0] = p[2] = p[4] = 1.0; p[1] = p[3] = 0.0;
 	
-	S = new_amoeba(p, D, chi2, 1.0); anneal(S, D, chi2, 1.0, 1000, 1.0e-6);
-	restart_amoeba(S, D, chi2, 1.0); anneal(S, D, chi2, 0.1, 1000, 1.0e-6);
-	restart_amoeba(S, D, chi2, 1.0); anneal(S, D, chi2, 0.0, 1000, 1.0e-6);
+	S = new_amoeba(p, D, chi2, 1.0); anneal(S, D, chi2, 5.0, 1000, 1.0e-6);
+	restart_amoeba(S, D, chi2, 1.0); anneal(S, D, chi2, 0.5, 1000, 1.0e-6);
+	restart_amoeba(S, D, chi2, 1.0); anneal(S, D, chi2, 0.0, 9999, 1.0e-6);
 	
-	for (i = 0; i < D; i++)
+	for (i = 0; i <= D; i++)
 		p[i] = S[D+1][i];
 	
 	free_matrix(S);
@@ -309,7 +302,7 @@ int within_range(double p[], double y)
 }
 
 /* Curve lookup x = f^(-1)(y) */
-double curve(double p[], double y)
+double lu_curve(double p[], double y)
 {
 	register double x = (y - p[1])/p[0];
 	
@@ -317,7 +310,7 @@ double curve(double p[], double y)
 }
 
 /* Reverse lookup y = f(x) */
-double curve_1(double p[], double x)
+double lu_curve_1(double p[], double x)
 {
 	return p[0]*pow(x, p[2]) + p[1];
 }

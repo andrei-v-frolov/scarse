@@ -1,4 +1,4 @@
-/* $Id: calibrate.c,v 1.2 2001/01/28 02:23:19 frolov Exp $ */
+/* $Id: calibrate.c,v 1.3 2001/02/05 03:59:39 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -108,11 +108,12 @@ static void scanner_correction(FILE *fp, target *tg)
 		
 		for (i = 0; i < tg->graypts; i++) {
 			XYZ2Gray(tg->data[tg->grayscale[i]].XYZ, &g);
-			fprintf(fp, "      %12.10g %12.10g (%12.10g)\n",
+			fprintf(fp, "      %12.10g %12.10g \t%12.10g\n",
 				tg->data[tg->grayscale[i]].RGB[j], g/wp,
 				tg->data[tg->grayscale[i]].RGB[3+j]);
 		}
-		fprintf(fp, "      %12.10g %12.10g\n;\n\n", 0.0, 0.0);
+		
+		fprintf(fp, ";\n\n");
 	}
 	
 	/* LUT */
@@ -120,21 +121,23 @@ static void scanner_correction(FILE *fp, target *tg)
 		fprintf(fp, "LUT:\n");
 		
 		for (i = 0; i < tg->pts; i++)
-			fprintf(fp, " %4s %12.10g %12.10g %12.10g %12.10g %12.10g %12.10g (%12.10g %12.10g %12.10g)\n",
+			fprintf(fp, " %4s %12.10g %12.10g %12.10g %12.10g %12.10g %12.10g \t%12.10g %12.10g %12.10g\n",
 				tg->data[i].label,
+				/* RGB values */
 				tg->data[i].RGB[0],
 				tg->data[i].RGB[1],
 				tg->data[i].RGB[2],
-				/* map Dmin to white point as per ICC specs */
+				/* XYZ values; map Dmin to white point as per ICC specs */
 				tg->data[i].XYZ[0]/Dmin[0]*XYZ_WPT[0],
 				tg->data[i].XYZ[1]/Dmin[1]*XYZ_WPT[1],
 				tg->data[i].XYZ[2]/Dmin[2]*XYZ_WPT[2],
+				/* measured deviation */
 				tg->data[i].RGB[3],
 				tg->data[i].RGB[4],
 				tg->data[i].RGB[5]
 			);
 		
-		fprintf(fp, ";\n");
+		fprintf(fp, ";\n\n");
 	}
 }
 
