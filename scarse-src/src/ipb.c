@@ -1,4 +1,4 @@
-/* $Id: ipb.c,v 1.1 2001/01/26 22:45:31 frolov Exp $ */
+/* $Id: ipb.c,v 1.2 2001/01/29 03:44:29 frolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -31,7 +31,13 @@
 #include <icc.h>
 #include "scarse.h"
 
+#ifdef PGPLOT
+#include <cpgplot.h>
+#endif
 
+
+
+/******************* Options and defaults *****************************/
 
 /* Usage */
 char *program_name = SELF;
@@ -950,6 +956,39 @@ void build_profile(char *file)
 		
 		if (verbose > 2 && rv)
 			warning("%s: warning: RGB curves were clipped", file);
+		
+		
+		#ifdef PGPLOT /* plot RGB curves */
+			for (i = 0; i < 3; i++) {
+				int j, size = (use_ins_curves && ins_curves_n[i] > lut_size_1d) ? ins_curves_n[i] : lut_size_1d;
+				float x[size], y[size];
+				double *curve[3] = {r->data, g->data, b->data};
+				
+				static char *label[3] = {
+					"CURVE IN0 (red):",
+					"CURVE IN1 (green):",
+					"CURVE IN2 (blue):"
+				};
+				
+				cpgsci(5); cpgenv(0.0, 1.0, 0.0, 1.0, 1, 1);
+				cpglab("(target)", "(sample)", label[i]);
+				
+				for (j = 0; j < lut_size_1d; j++) {
+					x[j] = curve[i][j];
+					y[j] = j/(lut_size_1d-1.0);
+					
+				}
+				cpgsci(1); cpgline(lut_size_1d, x, y);
+				
+				if (use_ins_curves) {
+					for (j = 0; j < ins_curves_n[i]; j++) {
+						x[j] = ins_curves[i][1][j];
+						y[j] = ins_curves[i][0][j];
+					}
+					cpgsci(3); cpgpt(ins_curves_n[i], x, y, 9);
+				}
+			}
+		#endif /* PGPLOT */
 	}
 	
 	
@@ -1320,6 +1359,10 @@ int main(int argc, char *argv[])
 	profile = argv[optind++];
 	
 	
+	#ifdef PGPLOT /* Initialize PGPlot library */
+		if (cpgbeg(0, "?", 1, 1) != 1) exit(2); cpgask(1);
+	#endif
+	
 	/* Initialize transform data */
 	if (verbose) fprintf(stderr, "%s\n", usage_msg[0]);
 	
@@ -1342,6 +1385,11 @@ int main(int argc, char *argv[])
 	
 	/* Test profile accuracy */
 	test_profile(profile);
+	
+	
+	#ifdef PGPLOT /* Clean up PGPlot stuff */
+		cpgend();
+	#endif
 	
 	return 0;
 }

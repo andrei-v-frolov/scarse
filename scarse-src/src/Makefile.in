@@ -1,5 +1,5 @@
 ################################################################
-# $Id: Makefile.in,v 1.2 2001/01/28 23:18:28 frolov Exp $
+# $Id: Makefile.in,v 1.3 2001/01/29 03:44:28 frolov Exp $
 # Makefile for Scarse source code
 ################################################################
 
@@ -21,17 +21,47 @@ INSTALL = install
 VERSION = $(shell cat ../VERSION)
 
 
+
+################################################################
+# Configuration
+################################################################
+
+# Define if you want debugging code compiled in
+DEBUG = 1
+
+
 # Compiler flags
-#CFLAGS	= -m486 -g -pg -Wall
+ifdef DEBUG
+CFLAGS	= -m486 -g -pg -Wall
+DEFINES	= -DDEBUG -DVERSION='"$(VERSION) (debugging on)"' -DDATADIR='"$(DATADIR)"'
+LDFLAGS	= -pg
+else
 CFLAGS	= -m486 -O6 -fomit-frame-pointer -funroll-loops
-INCLUDE	= -I../icclib
 DEFINES	= -DVERSION='"$(VERSION)"' -DDATADIR='"$(DATADIR)"'
-
-LIBS	= -L../icclib -ltiff -licc -lm
 LDFLAGS	=
+endif
 
-ALLFLAGS = $(CFLAGS) $(INCLUDE) $(DEFINES)
+INCLUDE	= -I../icclib
+LIBS	= -L../icclib -ltiff -licc -lm
 
+ALLFLAGS = $(CFLAGS) $(DEFINES) $(INCLUDE)
+
+
+ifdef DEBUG
+# Define if you want visual data representation using PGPlot
+PGPLOT = 1
+
+F77	= f77
+PGPDIR	= $(HOME)/local
+PGPFLGS	= -DPGPLOT -I$(PGPDIR)/include
+PGPLIBS	= -L/usr/X11R6/lib -L$(PGPDIR)/lib -lcpgplot -lpgplot -lX11
+endif
+
+
+
+################################################################
+# Dependencies
+################################################################
 
 # Files
 hdrs = $(wildcard *.h imageio/*.h)
@@ -67,9 +97,27 @@ imageio.a: $(addprefix imageio/, pack.o tiff.o ppm.o imageio.o)
 	$(RANLIB) $@
 
 
+
+################################################################
 # Implicit rules
+################################################################
+
+ifdef PGPLOT
+
+# DEBUG/PGPLOT rules
+%.o: %.c $(hdrs)
+	$(CC) $(ALLFLAGS) $(PGPFLGS) -c $< -o $@
+
+%: %.o
+	$(F77) $(LDFLAGS) $^ $(LIBS) $(PGPLIBS) -o $@
+
+else
+
+# Production rules
 %.o: %.c $(hdrs)
 	$(CC) $(ALLFLAGS) -c $< -o $@
 
 %: %.o
-	$(CC) $(ALLFLAGS) $^ $(LIBS) -o $@
+	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
+
+endif
