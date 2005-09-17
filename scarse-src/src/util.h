@@ -1,4 +1,4 @@
-/* $Id: util.h,v 1.6 2001/06/28 00:41:57 frolov Exp $ */
+/* $Id: util.h,v 1.7 2005/09/17 03:13:38 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -91,10 +91,6 @@ void biscale33(double A[3], double M[3][3], double B[3], double N[3][3]);
 
 
 /* Data fitting and approximation routines (fit.c) */
-
-double **new_amoeba(double x[], int n, double (*func)(double []), double lambda);
-void restart_amoeba(double **S, int n, double (*func)(double []), double lambda);
-void anneal(double **S, int n, double (*func)(double []), double T0, int maxsteps, double tol);
 
 double *fit_curve(double **data, int n);
 double lu_curve(double p[], double x);
