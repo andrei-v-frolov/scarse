@@ -1,5 +1,5 @@
 ################################################################
-# $Id: Makefile.in,v 1.3 2001/01/29 03:44:28 frolov Exp $
+# $Id: Makefile.in,v 1.4 2005/09/17 02:48:54 afrolov Exp $
 # Makefile for Scarse source code
 ################################################################
 
@@ -32,11 +32,11 @@ DEBUG = 1
 
 # Compiler flags
 ifdef DEBUG
-CFLAGS	= -m486 -g -pg -Wall
+CFLAGS	= -g -pg -Wall
 DEFINES	= -DDEBUG -DVERSION='"$(VERSION) (debugging on)"' -DDATADIR='"$(DATADIR)"'
 LDFLAGS	= -pg
 else
-CFLAGS	= -m486 -O6 -fomit-frame-pointer -funroll-loops
+CFLAGS	= -O3 -march=i386 -mcpu=pentium4
 DEFINES	= -DVERSION='"$(VERSION)"' -DDATADIR='"$(DATADIR)"'
 LDFLAGS	=
 endif
@@ -45,17 +45,6 @@ INCLUDE	= -I../icclib
 LIBS	= -L../icclib -ltiff -licc -lm
 
 ALLFLAGS = $(CFLAGS) $(DEFINES) $(INCLUDE)
-
-
-ifdef DEBUG
-# Define if you want visual data representation using PGPlot
-PGPLOT = 1
-
-F77	= f77
-PGPDIR	= $(HOME)/local
-PGPFLGS	= -DPGPLOT -I$(PGPDIR)/include
-PGPLIBS	= -L/usr/X11R6/lib -L$(PGPDIR)/lib -lcpgplot -lpgplot -lX11
-endif
 
 
 
@@ -78,7 +67,7 @@ clean:
 	rm -f $(objs)
 
 distclean: clean
-	rm -f $(bins)
+	rm -f $(bins) gmon.out
 
 install: $(bins)
 	$(INSTALL) -d $(BINDIR)

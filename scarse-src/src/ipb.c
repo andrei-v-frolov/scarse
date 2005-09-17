@@ -1,4 +1,4 @@
-/* $Id: ipb.c,v 1.7 2001/06/28 00:41:56 frolov Exp $ */
+/* $Id: ipb.c,v 1.8 2005/09/17 02:48:55 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -30,10 +30,6 @@
 
 #include <icc.h>
 #include "scarse.h"
-
-#ifdef PGPLOT
-#include <cpgplot.h>
-#endif
 
 
 
@@ -330,7 +326,8 @@ void read_curve(FILE *fp, int io, curve *c, char *label)
 			error("syntax error in curve data");
 		
 		/* small deviations are suspicious */
-		if (fabs(m[2][n]) < 2.5e-4) m[2][n] = 1.0; else v++;
+		//if (fabs(m[2][n]) < 2.5e-4) m[2][n] = 1.0; else v++;
+		if (fabs(m[2][n]) < 1.0e-3) m[2][n] = 1.0e-3; else v++;
 		
 		n++;
 	}
@@ -367,41 +364,54 @@ void read_curve(FILE *fp, int io, curve *c, char *label)
 	}
 	
 	
-	/* Plot curve fit and data */
-	#ifdef PGPLOT
+	/* Plot curve fit and data using gnuplot */
+	#ifdef DEBUG
+	#define PTS 257
+	#define DMIN 1.0e-3
 	{
-		#define PTS 256
-		float x[PTS], y[PTS], y1[PTS], y2[PTS];
+		double x, y; FILE *gp = popen("gnuplot", "w");
 		
-		/* frame and labels */
-		cpgsci(5); cpgenv(0.0, 1.0, 0.0, 1.0, 1, 1);
-		cpglab("(target)", "(sample)", label);
+		fprintf(gp, "set terminal postscript eps enhanced color; set title '%s'; set key left\n", label);
+		fprintf(gp, "set size 0.75,1.50; set lmargin 10; set multiplot; set size 0.75,1.03; set origin 0,0.47\n");
+		fprintf(gp, "set ylabel 'Y (device)'; set xrange [%g:1]; set yrange [%g:1]; set logscale\n", DMIN, DMIN);
+		fprintf(gp, "plot '-' title 'Y->X lookup' with lines lt 2, '-' title 'X->Y lookup' with lines lt 3, '-' title 'data' with yerrorbars lt 1 pt 6\n");
 		
-		/* fitted curve */
+		/* forward lookup */
 		for (i = 0; i < PTS; i++) {
-			y[i] = i/(PTS-1.0);
-			x[i] = lu_curve(c->fit, y[i]);
+			y = pow(DMIN, i/(PTS-1.0)); x = lu_curve(c->fit, y);
+			fprintf(gp, "%12.10g\t%12.10g\n", x, y);
 		}
-		cpgsci(2); cpgline(PTS, x, y);
+		fprintf(gp, "e\n");
 		
-		/* range */
-		x[0] = 0.0; x[1] = 1.0; cpgsci(4);
-		y[0] = y[1] = c->fit[3]; cpgline(2, x, y);
-		y[0] = y[1] = c->fit[4]; cpgline(2, x, y);
+		/* backward lookup */
+		for (i = 0; i < PTS; i++) {
+			x = pow(DMIN, i/(PTS-1.0)); y = lu_curve_1(c->fit, x);
+			fprintf(gp, "%12.10g\t%12.10g\n", x, y);
+		}
+		fprintf(gp, "e\n");
 		
 		/* data points and error bars */
 		for (i = 0; i < n; i++) {
-			x[i] = m[0][i];
-			y[i] = m[1][i];
-			y1[i] = y[i] - 3.0*m[2][i];
-			y2[i] = y[i] + 3.0*m[2][i];
+			fprintf(gp, "%12.10g\t%12.10g\t%12.10g\n", m[0][i], m[1][i], 3.0*m[2][i]);
 		}
-		cpgsci(3); cpgpt(n, x, y, 9);
-		if (v) cpgerry(n, x, y1, y2, 1.0);
+		fprintf(gp, "e\n");
 		
-		#undef PTS
+		fprintf(gp, "set size 0.75,0.50; set origin 0,0; set title; set nokey; set nologscale y\n");
+		fprintf(gp, "set xlabel 'X (target)'; set ylabel 'fit residual'; set yrange [*:*]\n");
+		fprintf(gp, "plot 1 lt 0, '-' title 'data' with yerrorbars lt 1 pt 6\n");
+		
+		/* fit residuals */
+		for (i = 0; i < n; i++) {
+			x = m[0][i]; y = lu_curve_1(c->fit, x);
+			fprintf(gp, "%g %g %g\n", x, m[1][i]/y, 3.0*m[2][i]/y);
+		}
+		fprintf(gp, "e\n");
+		
+		fprintf(gp, "set nomultiplot\n"); pclose(gp);
 	}
-	#endif /* PGPLOT */
+	#undef DMIN
+	#undef PTS
+	#endif /* DEBUG */
 }
 
 
@@ -1321,10 +1331,6 @@ int main(int argc, char *argv[])
 	profile = argv[optind++];
 	
 	
-	#ifdef PGPLOT /* Initialize PGPlot library */
-		if (cpgbeg(0, "?", 1, 1) != 1) exit(2); cpgask(1);
-	#endif
-	
 	/* Initialize transform data */
 	if (verbose) fprintf(stderr, "%s\n", usage_msg[0]);
 	
@@ -1349,10 +1355,6 @@ int main(int argc, char *argv[])
 	/* Test profile accuracy */
 	test_profile(profile);
 	
-	
-	#ifdef PGPLOT /* Clean up PGPlot stuff */
-		cpgend();
-	#endif
 	
 	return 0;
 }
