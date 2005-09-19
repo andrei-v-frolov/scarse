@@ -1,4 +1,4 @@
-/* $Id: fit.c,v 1.6 2005/09/17 03:13:38 afrolov Exp $ */
+/* $Id: fit.c,v 1.7 2005/09/19 06:23:14 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -134,57 +134,58 @@ double mmin(double p[], double **e, int n, double (*f)(double []), double eps)
 /* Curve data is passed as global variable */
 static int _curve_pts_;
 static double **_curve_data_;
+static double _curve_lim_[2];
 
 
 /* Curve model is power law with possible clipping */
 static double curve_model(double p[], double y)
 {
-	double x;
+	register double x = p[0]*pow(y, p[1]) + p[2];
 	
-	x = p[0]*pow(y, p[2]) + p[1];
-	
-	if (x < p[3]) x = p[3];
-	if (x > p[4]) x = p[4];
+	if (x < _curve_lim_[0]) x = _curve_lim_[0];
+	if (x > _curve_lim_[1]) x = _curve_lim_[1];
 	
 	return x;
 }
 
-/* Minimization criterion is least square */
+/* Minimization criterion is (robust) least square */
 static double curve_chi2(double p[])
 {
-	int i, n = _curve_pts_;
-	double t, s = 0.0, min = 1.0, max = 0.0;
+	int i, n = _curve_pts_; double t, s = 0.0;
 	double *y = _curve_data_[0], *x = _curve_data_[1], *dx = _curve_data_[2];
 	
 	for (i = 0; i < n; i++) {
-		if (x[i] < min) min = x[i];
-		if (x[i] > max) max = x[i];
-		
-		t = (x[i] - curve_model(p, y[i]))/dx[i]; s += t*t;
+		t = (x[i] - curve_model(p, y[i]))/dx[i]; s += log(1.0 + t*t/2.0);
 	}
-	
-	/* Penalty for clipping bounds wandering outside range */
-	if (p[3] < min) s *= 1.0 + 100.0*(p[3]-min)*(p[3]-min);
-	if (p[4] > max) s *= 1.0 + 100.0*(p[4]-max)*(p[4]-max);
 	
 	return s/n;
 }
 
-/* Fit parametric curve model y=f(x) to the data using simulated annealing */
+/* Fit parametric curve model x=f(y) to the data */
 double *fit_curve(double **data, int n)
 {
-	int i, j;
-	#define D 5
+	#define D 3
+	int i, j; double min = 1.0, max = 0.0;
 	double *p = vector(D+1), **e = matrix(D,D);
 	
+	/* data limits */
+	for (i = 0; i < n; i++) {
+		if (data[1][i] < min) min = data[1][i];
+		if (data[1][i] > max) max = data[1][i];
+	}
+	
 	/* initialize curve data and model */
-	_curve_data_ = data; _curve_pts_ = n;
-	p[0] = p[2] = p[4] = 1.0; p[1] = p[3] = 0.0;
+	_curve_pts_ = n;
+	_curve_data_ = data;
+	_curve_lim_[0] = min;
+	_curve_lim_[1] = max;
+	
+	p[0] = p[1] = 1.0; p[2] = 0.0;
 	
 	/* initialize direction set */
 	for (i = 0; i < D; i++) { for (j = 0; j < D; j++) e[i][j] = 0.0; e[i][i] = 1.0; }
 	
-	/* optimize */
+	/* do the fit by minimizing chi2 */
 	p[D] = mmin(p, e, D, curve_chi2, 1.0e-6);
 	
 	free_matrix(e); return p;
@@ -196,80 +197,83 @@ double *fit_curve(double **data, int n)
 /* Curve lookup y = f(x) */
 double lu_curve(double p[], double x)
 {
-	register double y = (x - p[1])/p[0];
+	register double y = (x - p[2])/p[0];
 	
-	return ppow(y, 1.0/p[2]);
+	return ppow(y, 1.0/p[1]);
 }
 
 /* Reverse lookup x = f^(-1)(y) */
 double lu_curve_1(double p[], double y)
 {
-	return p[0]*pow(y, p[2]) + p[1];
+	return p[0]*pow(y, p[1]) + p[2];
 }
 
 /* Curve slope */
 double curve_dydx(double p[], double y)
 {
-	return 1.0/(p[0]*p[2]*pow(y, p[2]-1.0));
+	return 1.0/(p[0]*p[1]*pow(y, p[1]-1.0));
 }
 
 
+
 /******************* Robust matrix fit estimate ***********************/
-#warning Done up to here...
 
 /* LUT data is passed as global variable */
 static int _lut_pts_;
 static int _lut_channel_;
 static double **_lut_data_;
+static double _lut_lim_[2];
 
 
 /* LUT model is linear fit with possible clipping */
 static double lut_model(double p[], double XYZ[])
 {
-	double x;
+	register double x = p[0]*XYZ[0] + p[1]*XYZ[1] + p[2]*XYZ[2];
 	
-	x = p[0]*XYZ[0] + p[1]*XYZ[1] + p[2]*XYZ[2];
-	
-	if (x < p[3]) x = p[3];
-	if (x > p[4]) x = p[4];
+	if (x < _lut_lim_[0]) x = _lut_lim_[0];
+	if (x > _lut_lim_[1]) x = _lut_lim_[1];
 	
 	return x;
 }
 
-/* Minimization criterion is least square */
+/* Minimization criterion is (robust) least square */
 static double lut_chi2(double p[])
 {
-	int i, n = _lut_pts_;
-	double t, s = 0.0, min = 1.0, max = 0.0;
+	int i, n = _lut_pts_; double t, s = 0.0;
 	
 	for (i = 0; i < n; i++) {
 		double *XYZ = _lut_data_[i], x = _lut_data_[i][_lut_channel_+3], dx = _lut_data_[i][_lut_channel_+6];
 		
-		if (x < min) min = x;
-		if (x > max) max = x;
-		
-		t = (x - lut_model(p, XYZ))/dx; s += t*t;
+		t = (x - lut_model(p, XYZ))/dx; s += log(1.0 + t*t/2.0);
 	}
-	
-	/* Penalty for clipping bounds wandering outside range */
-	if (p[3] < min) s *= 1.0 + 100.0*(p[3]-min)*(p[3]-min);
-	if (p[4] > max) s *= 1.0 + 100.0*(p[4]-max)*(p[4]-max);
 	
 	return s/n;
 }
 
-/* Fit linear model RGB=M*XYZ to the data using simulated annealing */
+/* Fit linear model RGB=M*XYZ to the data */
 void robust_linear_fit(double **data, int n, double M[3][3])
 {
+	#define D 3
 	int i, j, k;
-	#define D 5
 	
 	for (k = 0; k < 3; k++) {
+		double min = 1.0, max = 0.0;
 		double *p = vector(D+1), **e = matrix(D,D);
 		
+		/* data limits */
+		for (i = 0; i < n; i++) {
+			if (data[i][k+3] < min) min = data[i][k+3];
+			if (data[i][k+3] > max) max = data[i][k+3];
+		}
+		
 		/* initialize LUT data and model */
-		_lut_data_ = data; _lut_pts_ = n; _lut_channel_ = k;
-		p[0] = p[1] = p[2] = p[3] = 0.0; p[i] = p[4] = 1.0;
+		_lut_pts_ = n;
+		_lut_data_ = data;
+		_lut_channel_ = k;
+		_lut_lim_[0] = min;
+		_lut_lim_[1] = max;
+		
+		p[0] = p[1] = p[2] = 0.0; p[k] = 1.0;
 		
 		/* initialize direction set */
 		for (i = 0; i < D; i++) { for (j = 0; j < D; j++) e[i][j] = 0.0; e[i][i] = 1.0; }
@@ -277,8 +281,8 @@ void robust_linear_fit(double **data, int n, double M[3][3])
 		/* optimize */
 		p[D] = mmin(p, e, D, lut_chi2, 1.0e-6);
 		
-		for (j = 0; j < 3; j++) M[k][j] = p[j];
-		for (j = 0; j <= D; j++) fprintf(stderr, "%12.10g\t", p[j]);
+		for (i = 0; i < 3; i++) M[k][i] = p[i];
+		for (i = 0; i <= D; i++) fprintf(stderr, "%12.10g\t", p[i]);
 		fprintf(stderr, "\n");
 		
 		free_matrix(e); free_vector(p);

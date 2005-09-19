@@ -1,4 +1,4 @@
-/* $Id: ipb.c,v 1.8 2005/09/17 02:48:55 afrolov Exp $ */
+/* $Id: ipb.c,v 1.9 2005/09/19 06:23:15 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -305,8 +305,7 @@ void ctransform_1(void *cntx, double out[], double in[])
 /* Read curve data */
 void read_curve(FILE *fp, int io, curve *c, char *label)
 {
-	int i;
-	int n = 0, v = 0, size = 64;
+	int i; int n = 0, size = 64;
 	double **m = matrix(3, size);
 	
 	size_t bsize = 128;
@@ -325,9 +324,8 @@ void read_curve(FILE *fp, int io, curve *c, char *label)
 		if (sscanf(buffer, "%lf %lf %lf", &(m[io?1:0][n]), &(m[io?0:1][n]), &(m[2][n])) < 2)
 			error("syntax error in curve data");
 		
-		/* small deviations are suspicious */
-		//if (fabs(m[2][n]) < 2.5e-4) m[2][n] = 1.0; else v++;
-		if (fabs(m[2][n]) < 1.0e-3) m[2][n] = 1.0e-3; else v++;
+		/* small deviations are suspicious; limit them from below */
+		m[2][n] = sqrt(1.0e-6 + 1.0e-4*m[1][n]*m[1][n] + m[2][n]*m[2][n]);
 		
 		n++;
 	}
@@ -339,15 +337,11 @@ void read_curve(FILE *fp, int io, curve *c, char *label)
 	
 	if (verbose > 4) {
 		for (i = 0; i < n; i++)
-			if (!v) fprintf(stderr, "\t\t%12.10g %12.10g\n", m[0][i], m[1][i]);
-			else    fprintf(stderr, "\t\t%12.10g %12.10g \t(%12.10g)\n", m[0][i], m[1][i], m[2][i]);
-		
-		if (v && v!=n) fprintf(stderr, "\t\t%26s\t(%i point%s reset)\n", "", n-v, n-v > 1 ? "s" : "");
+			fprintf(stderr, "\t\t%12.10g %12.10g \t(%12.10g)\n", m[0][i], m[1][i], m[2][i]);
 	}
 	
 	if (verbose > 1) {
-		fprintf(stderr, "\t%i points, fitting curve...", n);
-		fflush(stderr);
+		fprintf(stderr, "\t%i points, fitting curve...", n); fflush(stderr);
 	}
 	
 	c->n = n;
@@ -358,9 +352,8 @@ void read_curve(FILE *fp, int io, curve *c, char *label)
 		fprintf(stderr, " done.\n");
 		
 		if (verbose > 3)
-			fprintf(stderr, "\t(Best fit: y = %12.10g * x^%12.10g + %12.10g;\n"
-					"\t Range [%12.10g .. %12.10g]; Chi2 = %12.10g)\n",
-					c->fit[0], c->fit[2], c->fit[1], c->fit[3], c->fit[4], c->fit[5]);
+			fprintf(stderr, "\t(Best fit: y = %9.7f * x^%9.7f + %9.7f; Chi2 = %.7f)\n",
+					c->fit[0], c->fit[1], c->fit[2], c->fit[3]);
 	}
 	
 	
@@ -392,7 +385,7 @@ void read_curve(FILE *fp, int io, curve *c, char *label)
 		
 		/* data points and error bars */
 		for (i = 0; i < n; i++) {
-			fprintf(gp, "%12.10g\t%12.10g\t%12.10g\n", m[0][i], m[1][i], 3.0*m[2][i]);
+			fprintf(gp, "%12.10g\t%12.10g\t%12.10g\n", m[0][i], m[1][i], m[2][i]);
 		}
 		fprintf(gp, "e\n");
 		
@@ -403,7 +396,7 @@ void read_curve(FILE *fp, int io, curve *c, char *label)
 		/* fit residuals */
 		for (i = 0; i < n; i++) {
 			x = m[0][i]; y = lu_curve_1(c->fit, x);
-			fprintf(gp, "%g %g %g\n", x, m[1][i]/y, 3.0*m[2][i]/y);
+			fprintf(gp, "%g %g %g\n", x, m[1][i]/y, m[2][i]/y);
 		}
 		fprintf(gp, "e\n");
 		
