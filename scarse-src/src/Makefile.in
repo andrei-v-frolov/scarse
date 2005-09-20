@@ -1,5 +1,5 @@
 ################################################################
-# $Id: Makefile.in,v 1.4 2005/09/17 02:48:54 afrolov Exp $
+# $Id: Makefile.in,v 1.5 2005/09/20 03:30:14 afrolov Exp $
 # Makefile for Scarse source code
 ################################################################
 
@@ -77,7 +77,7 @@ install: $(bins)
 # Dependencies
 cmap: cmap.o imageio.a util.o
 
-ipb: ipb.o interp.o fit.o sort.o spaces.o matrix.o util.o
+ipb: ipb.o fit.o sort.o spaces.o matrix.o util.o
 
 calibrate: calibrate.o targets.o imageio.a sort.o spaces.o matrix.o util.o
 

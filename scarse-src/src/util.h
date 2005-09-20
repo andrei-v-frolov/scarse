@@ -1,4 +1,4 @@
-/* $Id: util.h,v 1.7 2005/09/17 03:13:38 afrolov Exp $ */
+/* $Id: util.h,v 1.8 2005/09/20 03:30:15 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -92,10 +92,11 @@ void biscale33(double A[3], double M[3][3], double B[3], double N[3][3]);
 
 /* Data fitting and approximation routines (fit.c) */
 
-double *fit_curve(double **data, int n);
 double lu_curve(double p[], double x);
 double lu_curve_1(double p[], double y);
-double curve_dydx(double p[], double y);
+double *fit_curve(double **data, int n);
+
+void fit_matrix(double **data, int n, double M[3][3]);
 
 void gaussj(double **A, int n, double **B, int m);
 

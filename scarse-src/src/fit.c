@@ -1,4 +1,4 @@
-/* $Id: fit.c,v 1.7 2005/09/19 06:23:14 afrolov Exp $ */
+/* $Id: fit.c,v 1.8 2005/09/20 03:30:15 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -137,6 +137,21 @@ static double **_curve_data_;
 static double _curve_lim_[2];
 
 
+/* Curve lookup y = f(x) */
+double lu_curve(double p[], double x)
+{
+	register double y = (x - p[2])/p[0];
+	
+	return ppow(y, 1.0/p[1]);
+}
+
+/* Reverse lookup x = f^(-1)(y) */
+double lu_curve_1(double p[], double y)
+{
+	return p[0]*ppow(y, p[1]) + p[2];
+}
+
+
 /* Curve model is power law with possible clipping */
 static double curve_model(double p[], double y)
 {
@@ -194,41 +209,19 @@ double *fit_curve(double **data, int n)
 }
 
 
-/* Curve lookup y = f(x) */
-double lu_curve(double p[], double x)
-{
-	register double y = (x - p[2])/p[0];
-	
-	return ppow(y, 1.0/p[1]);
-}
-
-/* Reverse lookup x = f^(-1)(y) */
-double lu_curve_1(double p[], double y)
-{
-	return p[0]*pow(y, p[1]) + p[2];
-}
-
-/* Curve slope */
-double curve_dydx(double p[], double y)
-{
-	return 1.0/(p[0]*p[1]*pow(y, p[1]-1.0));
-}
-
-
 
 /******************* Robust matrix fit estimate ***********************/
 
 /* LUT data is passed as global variable */
 static int _lut_pts_;
-static int _lut_channel_;
-static double **_lut_data_;
+static double *_lut_data_[5];
 static double _lut_lim_[2];
 
 
 /* LUT model is linear fit with possible clipping */
-static double lut_model(double p[], double XYZ[])
+static double lut_model(double p[], double X, double Y, double Z)
 {
-	register double x = p[0]*XYZ[0] + p[1]*XYZ[1] + p[2]*XYZ[2];
+	register double x = p[0]*X + p[1]*Y + p[2]*Z;
 	
 	if (x < _lut_lim_[0]) x = _lut_lim_[0];
 	if (x > _lut_lim_[1]) x = _lut_lim_[1];
@@ -240,36 +233,38 @@ static double lut_model(double p[], double XYZ[])
 static double lut_chi2(double p[])
 {
 	int i, n = _lut_pts_; double t, s = 0.0;
+	double *X = _lut_data_[0], *Y = _lut_data_[1], *Z = _lut_data_[2], *x = _lut_data_[3], *dx = _lut_data_[4];
 	
 	for (i = 0; i < n; i++) {
-		double *XYZ = _lut_data_[i], x = _lut_data_[i][_lut_channel_+3], dx = _lut_data_[i][_lut_channel_+6];
-		
-		t = (x - lut_model(p, XYZ))/dx; s += log(1.0 + t*t/2.0);
+		t = (x[i] - lut_model(p, X[i], Y[i], Z[i]))/dx[i]; s += log(1.0 + t*t/2.0);
 	}
 	
 	return s/n;
 }
 
 /* Fit linear model RGB=M*XYZ to the data */
-void robust_linear_fit(double **data, int n, double M[3][3])
+void fit_matrix(double **data, int n, double M[3][3])
 {
 	#define D 3
 	int i, j, k;
 	
 	for (k = 0; k < 3; k++) {
-		double min = 1.0, max = 0.0;
+		double min = 1.0, max = 0.0, *x = data[k+3];
 		double *p = vector(D+1), **e = matrix(D,D);
 		
 		/* data limits */
 		for (i = 0; i < n; i++) {
-			if (data[i][k+3] < min) min = data[i][k+3];
-			if (data[i][k+3] > max) max = data[i][k+3];
+			if (x[i] < min) min = x[i];
+			if (x[i] > max) max = x[i];
 		}
 		
 		/* initialize LUT data and model */
 		_lut_pts_ = n;
-		_lut_data_ = data;
-		_lut_channel_ = k;
+		_lut_data_[0] = data[0];
+		_lut_data_[1] = data[1];
+		_lut_data_[2] = data[2];
+		_lut_data_[3] = data[k+3];
+		_lut_data_[4] = data[k+6];
 		_lut_lim_[0] = min;
 		_lut_lim_[1] = max;
 		
@@ -282,8 +277,6 @@ void robust_linear_fit(double **data, int n, double M[3][3])
 		p[D] = mmin(p, e, D, lut_chi2, 1.0e-6);
 		
 		for (i = 0; i < 3; i++) M[k][i] = p[i];
-		for (i = 0; i <= D; i++) fprintf(stderr, "%12.10g\t", p[i]);
-		fprintf(stderr, "\n");
 		
 		free_matrix(e); free_vector(p);
 	}

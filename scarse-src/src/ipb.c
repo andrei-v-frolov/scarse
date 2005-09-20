@@ -1,4 +1,4 @@
-/* $Id: ipb.c,v 1.9 2005/09/19 06:23:15 afrolov Exp $ */
+/* $Id: ipb.c,v 1.10 2005/09/20 03:30:15 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -16,7 +16,10 @@
  */
 
 /* TODO:
- *
+ *   - Convert to robust fitting (work in progress...)
+ *   - Generalize variance handling (input class only now)
+ *   - Sort out the mess of input/output vs device/PCS notation
+ *   - Do something about gamut boundaries and tables...
  */
 
 #define SELF "ipb"
@@ -30,6 +33,28 @@
 
 #include <icc.h>
 #include "scarse.h"
+
+
+
+/* Calibration data (ipb.c) */
+
+typedef struct { /* curves data and fit */
+	int n;			/* data points */
+	double **data;		/* [y,x,dx][n] */
+	double *fit;		/* curve fit */
+} curve;
+
+typedef struct { /* LUT data and fit */
+	int flag;			/* outlier? */
+	char *label;			/* patch label */
+	/* Measured values */
+	double  in[MAXCHANNELS];	/* input */
+	double out[MAXCHANNELS];	/* output */
+	double var[MAXCHANNELS];	/* variance */
+	/* Curve pullback values and variances */
+	double DEV[MAXCHANNELS*2];	/* (linearized) device */
+	double XYZ[6];			/* PCS */
+} datapt;
 
 
 
@@ -135,16 +160,13 @@ static curve	ins_curves[MAXCHANNELS],
 		outs_curves[MAXCHANNELS];
 
 
-static int              use_variance = -1; /* -1=no, 1=in, 0=out */
-static int              var_channels = 0;
-
+/****** !!! MODIFY !!! *******/
 static int           calibration_pts = 0;
 static datapt      *calibration_data = NULL;
 
 static int              approx_level = 0;
 
 
-/****** !!! MODIFY !!! *******/
 static int          calibration_data_pts = 0;
 static double	*calibration_data_vector = NULL;
 
@@ -302,30 +324,27 @@ void ctransform_1(void *cntx, double out[], double in[])
 
 /******************* Calibration data handling ************************/
 
+/* small deviations are suspicious; limit them from below */
+#define LIMDEV(x,dx) (sqrt(1.0e-6 + 1.0e-4*(x)*(x) + (dx)*(dx)))
+
 /* Read curve data */
 void read_curve(FILE *fp, int io, curve *c, char *label)
 {
-	int i; int n = 0, size = 64;
-	double **m = matrix(3, size);
-	
-	size_t bsize = 128;
-	char *buffer = (char *)xmalloc(bsize);
-	
+	int i; int n = 0, size = 64; double **m = matrix(3, size);
+	size_t bsize = 128; char *buffer = (char *)xmalloc(bsize);
 	
 	/* Read curve data */
 	while (getline(&buffer, &bsize, fp) != -1) {
 		if (*buffer == '#') continue;
 		if (*buffer == ';') break;
 		
-		if (n >= size)
-			m = grow_matrix(m, 3, size<<=1);
+		if (n >= size) m = grow_matrix(m, 3, size<<=1);
 		
 		m[0][n] = m[1][n] = m[2][n] = 0.0;
 		if (sscanf(buffer, "%lf %lf %lf", &(m[io?1:0][n]), &(m[io?0:1][n]), &(m[2][n])) < 2)
 			error("syntax error in curve data");
 		
-		/* small deviations are suspicious; limit them from below */
-		m[2][n] = sqrt(1.0e-6 + 1.0e-4*m[1][n]*m[1][n] + m[2][n]*m[2][n]);
+		m[2][n] = LIMDEV(m[1][n], m[2][n]);
 		
 		n++;
 	}
@@ -408,69 +427,12 @@ void read_curve(FILE *fp, int io, curve *c, char *label)
 }
 
 
-
-
-
-#warning !!! The mess starts here !!!
-
-int within(double **p, int n, double x[])
-{
-	#define D 3
-	
-	int i, j, k;
-	double t, norm = 0.0;
-	double **r = matrix(n, D+1);
-	
-	for (i = 0; i < n; i++) {
-		for (k = 0, norm = 0.0; k < D; k++) {
-			t = r[i][k] = p[i][k] - x[k]; norm += t*t;
-		}
-		
-		r[i][D] = sqrt(norm);
-	}
-	
-	for (i = 0; i < n; i++) for (j = i; j < n; j++) {
-		
-	}
-	
-	free_matrix(r);
-	
-	#undef D
-}
-
-
-
-
-
-
-
-
-
-
 /* Read LUT data */
-	void robust_linear_fit(double **data, int n, double M[3][3]);
 void read_lut(FILE *fp)
 {
-	int i;
-	char *p, *q;
-	int n = 0, v = 0, size = 64;
+	int i, j; char *p, *q; int n = 0, size = 64;
 	datapt *data = (datapt *)xmalloc(size*sizeof(datapt));
-	
-	size_t bsize = 128;
-	char *buffer = (char *)xmalloc(bsize);
-	
-	
-	/* What variance data applies to? */
-	switch (class) {
-		case icSigInputClass:
-			use_variance = 1; var_channels = ins_channels; break;
-		case icSigOutputClass:
-		case icSigDisplayClass:
-			/* variance not handled yet */
-			use_variance = -1; var_channels = 0; break;
-		default:
-			use_variance = -1; var_channels = 0;
-	}
+	size_t bsize = 128; char *buffer = (char *)xmalloc(bsize);
 	
 	/* Read LUT data */
 	while (getline(&buffer, &bsize, fp) != -1) {
@@ -479,8 +441,7 @@ void read_lut(FILE *fp)
 		if (ignore_lut) continue;
 		
 		/* initialize data structure */
-		if (n >= size)
-			data = (datapt *)xrealloc(data, (size <<= 1)*sizeof(datapt));
+		if (n >= size) data = (datapt *)xrealloc(data, (size <<= 1)*sizeof(datapt));
 		
 		data[n].flag = 0; data[n].label = NULL;
 		
@@ -502,99 +463,102 @@ void read_lut(FILE *fp)
 			if (p == q) error("syntax error in lut data"); else p = q;
 		}
 		
-		for (i = 0; i < var_channels; i++) {
+		for (i = 0; i < ins_channels; i++) {
 			data[n].var[i] = strtod(p, &q); p = q;
-			/* small deviations are suspicious */
-			if (fabs(data[n].var[i]) < 2.5e-4) data[n].var[i] = 1.0; else v++;
 		}
+		
+		
+		/* push input data forward to linearized device space */
+		incurves(NULL, data[n].DEV, data[n].in);
+		
+		{
+			double t1[ins_channels], t2[ins_channels];
+			
+			for (i = 0; i < ins_channels; i++) {
+				t1[i] = data[n].in[i] + data[n].var[i]/2.0;
+				t2[i] = data[n].in[i] - data[n].var[i]/2.0;
+			}
+			
+			incurves(NULL, t1, t1); incurves(NULL, t2, t2);
+			
+			for (i = 0; i < ins_channels; i++)
+				data[n].DEV[i+ins_channels] = LIMDEV(data[n].DEV[i], t1[i]-t2[i]);
+		}
+		
+		
+		/* pull output data back to XYZ profile connection space */
+		outcurves_1(NULL, data[n].XYZ, data[n].out);
+		(*outs2XYZ)(data[n].XYZ, data[n].XYZ);
+		
+		if (verbose > 3)
+			fprintf(stderr, "%20s %12.10g %12.10g %12.10g -> %12.10g %12.10g %12.10g\n",
+				data[n].label,  data[n].XYZ[0], data[n].XYZ[1], data[n].XYZ[2],
+						data[n].DEV[0], data[n].DEV[1], data[n].DEV[2]);
 		
 		n++;
 	}
 	free(buffer); if (ignore_lut) return;
 	
 	
-	
-#if 0
 	/* Fit calibration data */
-	if (!n) error("No curve data supplied");
-	if (!v) use_variance = -1;
+	if (!n) error("No lookup table data supplied");
 	
-	k = 0;
-	m = matrix(n, 9);
+	{
+	double **m = matrix(9, n), M[3][3];
 	
-	for (i = 0; i < n; i++) if (!data[i].flag) {
-		outcurves(NULL, m[i], data[i].XYZ);
-		incurves(NULL, &(m[i][3]), data[i].RGB);
-		for(j=3; j<6; j++) m[i][j+3] = data[i].RGB[j];
-		k++;
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < 3; j++) m[j  ][i] = data[i].XYZ[j];
+		for (j = 0; j < 6; j++) m[j+3][i] = data[i].DEV[j];
 	}
 	
-	robust_linear_fit(m, k, M);
+	fit_matrix(m, n, M);
 	
-	
-	/* Plot curve fit and data */
-	#ifdef PGPLOT
+	/* Plot linear lookup table fit scatter using gnuplot */
+	#ifdef DEBUG
 	{
-		int k;
-		double t[3];
-		#define PTS 512
-		float x[PTS], y[PTS];
+		int k; double t[3]; FILE *gp = popen("gnuplot", "w");
 		
-		/* frame and labels */
-		cpgsci(5); cpgenv(0.0, 1.0, 0.0, 1.0, 1, 1);
-		cpglab("(target)", "(sample)", "XXX");
+		fprintf(gp, "set terminal postscript eps enhanced color; set nokey\n");
+		fprintf(gp, "set size 0.75,1.50; set lmargin 10; set bmargin 1.5; set multiplot; set size 0.75,0.47\n");
+		fprintf(gp, "set xrange [-0.1:1.1]; set yrange [0:1]\n");
 		
-		/* data points and error bars */
-		for (i = 0; i < 3; i++) {
-			for (j = 0; j < n; j++) {
-				apply33(M, m[j], t); x[j] = t[i];
-				//x[j] = m[j][i];
-				y[j] = m[j][i+3];
+		for (k = 0; k < 3; k++) {
+			if (k == 2) {
+				fprintf(gp, "set xlabel 'X (target pullback)'\n");
+				fprintf(gp, "set label 'Scatter after linear regression' at screen 0.4,1.47 center\n");
 			}
-			cpgsci(2+i); cpgpt(n, x, y, 0);
+			fprintf(gp, "set ylabel 'Y (device, channel %i)'\n", k);
+			fprintf(gp, "set origin 0,%f\n", 0.06 + 0.47*(2-k));
+			fprintf(gp, "plot x with line lt 2, '-' title 'data' with yerrorbars lt 1 pt 6\n");
+			
+			/* data points and error bars */
+			for (i = 0; i < n; i++) {
+				apply33(M, data[i].XYZ, t); incurves_1(NULL, t, t);
+				fprintf(gp, "%12.10g\t%12.10g\t%12.10g\n", t[k], data[i].in[k], data[i].var[k]);
+			}
+			fprintf(gp, "e\n");
 		}
 		
-		#undef PTS
+		fprintf(gp, "set nomultiplot\n"); pclose(gp);
 	}
-	#endif /* PGPLOT */
+	#endif /* DEBUG */
+	
+	
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	
 	
 	#ifdef XXX
-	double e = 0.0, dE[3] = {0.0 /* max */, HUGE /* min */, 0.0 /* avg */};
-	
-	
-		#warning DO GAMUT CHECK
-		/* Check that the data point is inside gamut constraints 
-		if ((ins_gamut_constrained && !in_gamut(ins, ins_gamut, ip)) ||
-		    (outs_gamut_constrained && !in_gamut(outs, outs_gamut, op))) {
-			if (verbose > 3)
-				fprintf(stderr, "%20s  outside of gamut bounds, skipping!\n", label);
-			continue;
-		}
-		*/
-		
-		/* Process LUT data point */
-		if (n+4 >= size)
-			m = grow_matrix(m, 6, size <<= 1);
-		
-		/* push input data forward to XYZ */
-		incurves(NULL, ip, ip); (*ins2XYZ)(ip, ip);
-		m[0][n] = ip[0]; m[1][n] = ip[1]; m[2][n] = ip[2];
-		
-		/* pull output data back to XYZ */
-		outcurves_1(NULL, op, op); (*outs2XYZ)(op, op);
-		m[3][n] = op[0]; m[4][n] = op[1]; m[5][n] = op[2];
-		
-		if (verbose > 3)
-			fprintf(stderr, "%20s %12.10g %12.10g %12.10g -> %12.10g %12.10g %12.10g\n",
-				label, m[0][n], m[1][n], m[2][n], m[3][n], m[4][n], m[5][n]);
-		
-		free(label);
-		
-		n++;
-	}
-	
 	/* Build inverse data if required */
 	if (invertible) {
 		im = matrix(6, size);
@@ -712,7 +676,6 @@ void read_lut(FILE *fp)
 	
 	
 	#endif
-#endif
 }
 
 
