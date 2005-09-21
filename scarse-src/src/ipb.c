@@ -1,10 +1,10 @@
-/* $Id: ipb.c,v 1.10 2005/09/20 03:30:15 afrolov Exp $ */
+/* $Id: ipb.c,v 1.11 2005/09/21 02:48:57 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
  * ICC profile builder - build profile based on measured data.
  * 
- * Copyright (C) 1999-2001 Scarse Project
+ * Copyright (C) 1999-2005 Scarse Project
  * Distributed under the terms of GNU Public License.
  * 
  * Maintainer: Andrei Frolov <andrei@phys.ualberta.ca>
@@ -33,28 +33,6 @@
 
 #include <icc.h>
 #include "scarse.h"
-
-
-
-/* Calibration data (ipb.c) */
-
-typedef struct { /* curves data and fit */
-	int n;			/* data points */
-	double **data;		/* [y,x,dx][n] */
-	double *fit;		/* curve fit */
-} curve;
-
-typedef struct { /* LUT data and fit */
-	int flag;			/* outlier? */
-	char *label;			/* patch label */
-	/* Measured values */
-	double  in[MAXCHANNELS];	/* input */
-	double out[MAXCHANNELS];	/* output */
-	double var[MAXCHANNELS];	/* variance */
-	/* Curve pullback values and variances */
-	double DEV[MAXCHANNELS*2];	/* (linearized) device */
-	double XYZ[6];			/* PCS */
-} datapt;
 
 
 
@@ -153,6 +131,13 @@ static transform            outs2XYZ = NULL,
                             XYZ2outs = NULL;
 
 
+/****** !!! MODIFY !!! *******/
+typedef struct { /* curves data and fit */
+	int n;			/* data points */
+	double **data;		/* [y,x,dx][n] */
+	double *fit;		/* curve fit */
+} curve;
+
 static int	use_ins_curves = 0,
 		use_outs_curves = 0;
 
@@ -161,26 +146,25 @@ static curve	ins_curves[MAXCHANNELS],
 
 
 /****** !!! MODIFY !!! *******/
+typedef struct { /* LUT data and fit */
+	int flag;			/* outlier? */
+	char *label;			/* patch label */
+	/* Measured values */
+	double  in[MAXCHANNELS];	/* input */
+	double out[MAXCHANNELS];	/* output */
+	double var[MAXCHANNELS];	/* variance */
+	/* Curve pullback values and variances */
+	double DEV[MAXCHANNELS*2];	/* (linearized) device */
+	double XYZ[6];			/* PCS */
+} datapt;
+
 static int           calibration_pts = 0;
 static datapt      *calibration_data = NULL;
 
 static int              approx_level = 0;
 
-
-static int          calibration_data_pts = 0;
-static double	*calibration_data_vector = NULL;
-
-static double	L[3][3]     = { {1.0, 0.0, 0.0},
-				{0.0, 1.0, 0.0},
-				{0.0, 0.0, 1.0} },
-		L1[3][3]    = { {1.0, 0.0, 0.0},
-				{0.0, 1.0, 0.0},
-				{0.0, 0.0, 1.0} };
-
 static int	use_higher_order_approximation = 0;
 static double	**P = NULL, **P1 = NULL;
-
-static void	*ELUT = NULL, *ELUT_1 = NULL;
 /****** !!! MODIFY !!! *******/
 
 
@@ -275,8 +259,7 @@ void outcurves_1_expanded(void *cntx, double out[], double in[])
 /* 3D -> 3D color transformation */
 void ctransform(void *cntx, double out[], double in[])
 {
-	int i;
-	double t[3], XYZ[3], diff[3];
+	double t[3], XYZ[3];
 	
 	if (lut_shadow_expansion != 1.0)
 		vgamma(in, in, ins_channels, lut_shadow_expansion);
@@ -284,14 +267,7 @@ void ctransform(void *cntx, double out[], double in[])
 	
 	(*ins2XYZ)(in, t);
 	
-	if (use_higher_order_approximation)
-		poly_approx(P, t, XYZ); else apply33(L, t, XYZ);
-	
-	#warning interpolation in ctransform()
-	if (0 && ELUT) {
-		interp3d(ELUT, XYZ, diff);
-		for (i = 0; i < 3; i++) XYZ[i] += diff[i];
-	}
+	if (use_higher_order_approximation) poly_approx(P, t, XYZ);
 	
 	(*XYZ2outs)(XYZ, out);
 }
@@ -299,8 +275,7 @@ void ctransform(void *cntx, double out[], double in[])
 /* Inverse 3D -> 3D color transformation */
 void ctransform_1(void *cntx, double out[], double in[])
 {
-	int i;
-	double t[3], XYZ[3], diff[3];
+	double t[3], XYZ[3];
 	
 	if (lut_shadow_expansion != 1.0)
 		vgamma(in, in, ins_channels, lut_shadow_expansion);
@@ -308,14 +283,7 @@ void ctransform_1(void *cntx, double out[], double in[])
 	
 	(*outs2XYZ)(in, XYZ);
 	
-	if (use_higher_order_approximation)
-		poly_approx(P1, XYZ, t); else apply33(L1, XYZ, t);
-	
-	#warning interpolation in ctransform_1()
-	if (0 && ELUT_1) {
-		interp3d(ELUT_1, XYZ, diff);
-		for (i = 0; i < 3; i++) XYZ[i] += diff[i];
-	}
+	if (use_higher_order_approximation) poly_approx(P1, XYZ, t);
 	
 	(*XYZ2ins)(t, out);
 }
@@ -354,14 +322,12 @@ void read_curve(FILE *fp, int io, curve *c, char *label)
 	/* Fit curve data */
 	if (!n) error("No curve data supplied");
 	
-	if (verbose > 4) {
+	if (verbose > 3) {
 		for (i = 0; i < n; i++)
 			fprintf(stderr, "\t\t%12.10g %12.10g \t(%12.10g)\n", m[0][i], m[1][i], m[2][i]);
 	}
 	
-	if (verbose > 1) {
-		fprintf(stderr, "\t%i points, fitting curve...", n); fflush(stderr);
-	}
+	if (verbose > 1) { fprintf(stderr, "\t%i points, fitting curve...", n); fflush(stderr); }
 	
 	c->n = n;
 	c->data = m;
@@ -370,7 +336,7 @@ void read_curve(FILE *fp, int io, curve *c, char *label)
 	if (verbose > 1) {
 		fprintf(stderr, " done.\n");
 		
-		if (verbose > 3)
+		if (verbose > 2)
 			fprintf(stderr, "\t(Best fit: y = %9.7f * x^%9.7f + %9.7f; Chi2 = %.7f)\n",
 					c->fit[0], c->fit[1], c->fit[2], c->fit[3]);
 	}
@@ -467,10 +433,10 @@ void read_lut(FILE *fp)
 			data[n].var[i] = strtod(p, &q); p = q;
 		}
 		
-		
 		/* push input data forward to linearized device space */
 		incurves(NULL, data[n].DEV, data[n].in);
 		
+		/* push input data errors forward to linearized device space */
 		{
 			double t1[ins_channels], t2[ins_channels];
 			
@@ -485,197 +451,140 @@ void read_lut(FILE *fp)
 				data[n].DEV[i+ins_channels] = LIMDEV(data[n].DEV[i], t1[i]-t2[i]);
 		}
 		
-		
 		/* pull output data back to XYZ profile connection space */
 		outcurves_1(NULL, data[n].XYZ, data[n].out);
 		(*outs2XYZ)(data[n].XYZ, data[n].XYZ);
 		
-		if (verbose > 3)
-			fprintf(stderr, "%20s %12.10g %12.10g %12.10g -> %12.10g %12.10g %12.10g\n",
-				data[n].label,  data[n].XYZ[0], data[n].XYZ[1], data[n].XYZ[2],
-						data[n].DEV[0], data[n].DEV[1], data[n].DEV[2]);
-		
 		n++;
-	}
-	free(buffer); if (ignore_lut) return;
-	
-	
-	/* Fit calibration data */
-	if (!n) error("No lookup table data supplied");
-	
-	{
-	double **m = matrix(9, n), M[3][3];
-	
-	for (i = 0; i < n; i++) {
-		for (j = 0; j < 3; j++) m[j  ][i] = data[i].XYZ[j];
-		for (j = 0; j < 6; j++) m[j+3][i] = data[i].DEV[j];
-	}
-	
-	fit_matrix(m, n, M);
-	
-	/* Plot linear lookup table fit scatter using gnuplot */
-	#ifdef DEBUG
-	{
-		int k; double t[3]; FILE *gp = popen("gnuplot", "w");
-		
-		fprintf(gp, "set terminal postscript eps enhanced color; set nokey\n");
-		fprintf(gp, "set size 0.75,1.50; set lmargin 10; set bmargin 1.5; set multiplot; set size 0.75,0.47\n");
-		fprintf(gp, "set xrange [-0.1:1.1]; set yrange [0:1]\n");
-		
-		for (k = 0; k < 3; k++) {
-			if (k == 2) {
-				fprintf(gp, "set xlabel 'X (target pullback)'\n");
-				fprintf(gp, "set label 'Scatter after linear regression' at screen 0.4,1.47 center\n");
-			}
-			fprintf(gp, "set ylabel 'Y (device, channel %i)'\n", k);
-			fprintf(gp, "set origin 0,%f\n", 0.06 + 0.47*(2-k));
-			fprintf(gp, "plot x with line lt 2, '-' title 'data' with yerrorbars lt 1 pt 6\n");
-			
-			/* data points and error bars */
-			for (i = 0; i < n; i++) {
-				apply33(M, data[i].XYZ, t); incurves_1(NULL, t, t);
-				fprintf(gp, "%12.10g\t%12.10g\t%12.10g\n", t[k], data[i].in[k], data[i].var[k]);
-			}
-			fprintf(gp, "e\n");
-		}
-		
-		fprintf(gp, "set nomultiplot\n"); pclose(gp);
-	}
-	#endif /* DEBUG */
-	
-	
-	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	#ifdef XXX
-	/* Build inverse data if required */
-	if (invertible) {
-		im = matrix(6, size);
-		
-		for (j = 0; j < n; j++) {
-			im[0][j] = m[3][j];
-			im[1][j] = m[4][j];
-			im[2][j] = m[5][j];
-			
-			im[3][j] = m[0][j];
-			im[4][j] = m[1][j];
-			im[5][j] = m[2][j];
-		}
 	}
 	
 	/* Tuck a copy of calibration data away for later */
-	calibration_data_pts = cdp;
-	calibration_data_vector = cdv;
+	calibration_pts = n; calibration_data = data;
 	
 	/* Fit calibration data and prepare for interpolation */
 	if (!ignore_lut && n) {
-		/* Find best linear RGB transform */
-		best_linear_fit(m, n, L); inv33(L, L1);
+		int v = 0; double **m = matrix(9, n);
 		
-		if (verbose > 4) {
-			fprintf(stderr, "\tLinear transform prefactor:\n");
-			fprintf(stderr, "\t\t    [ %13.10g %13.10g %13.10g ]\n", L[0][0], L[0][1], L[0][2]);
-			fprintf(stderr, "\t\tL = [ %13.10g %13.10g %13.10g ]\n", L[1][0], L[1][1], L[1][2]);
-			fprintf(stderr, "\t\t    [ %13.10g %13.10g %13.10g ]\n", L[2][0], L[2][1], L[2][2]);
+		for (i = 0; i < n; i++) {
+			for (j = 0; j < 3; j++) m[j  ][i] = data[i].XYZ[j];
+			for (j = 0; j < 6; j++) m[j+3][i] = data[i].DEV[j];
 		}
+		
+		/* Find best-fitting linear RGB transform */
+		fit_matrix(m, n, M_XYZ2RGB); inv33(M_XYZ2RGB, M_RGB2XYZ);
+		
+		/* Flags outlier points that were likely clipped */
+		{
+			double t[ins_channels], max[ins_channels], min[ins_channels];
+			
+			for (j = 0; j < ins_channels; j++) { max[j] = 0.0; min[j] = 1.0; }
+			
+			/* device space boundaries */
+			for (i = 0; i < n; i++) {
+				for (j = 0; j < ins_channels; j++) {
+					if (data[i].DEV[j] < min[j]) min[j] = data[i].DEV[j];
+					if (data[i].DEV[j] > max[j]) max[j] = data[i].DEV[j];
+				}
+			}
+			
+			/* out-of-bounds pull-backs */
+			for (i = 0; i < n; i++) {
+				(*XYZ2ins)(data[i].XYZ, t);
+				
+				for (j = 0; j < ins_channels; j++) {
+					if (t[j] < min[j] - 3.0*data[i].DEV[ins_channels+j]) data[i].flag = 1;
+					if (t[j] > max[j] + 3.0*data[i].DEV[ins_channels+j]) data[i].flag = 1;
+				}
+				
+				if (verbose > 3) fprintf(stderr, "%c%18s: %12.10g %12.10g %12.10g -> %12.10g %12.10g %12.10g\n",
+					(data[i].flag ? '#' : ' '), data[i].label,
+					data[i].XYZ[0], data[i].XYZ[1], data[i].XYZ[2],
+					data[i].DEV[0], data[i].DEV[1], data[i].DEV[2]);
+				
+				if (data[i].flag) v++;
+			}
+		}
+		
+		if (verbose > 1) { fprintf(stderr, "\t%i points (%i discarded), linear fit... ", n, v); fflush(stderr); }
+		
+		if (verbose > 2) {
+			fprintf(stderr, "\n\tXYZ -> RGB conversion matrix:\n");
+			fprintf(stderr, "\t\t[R]   [ %13.10g %13.10g %13.10g ] [X]\n", M_XYZ2RGB[0][0], M_XYZ2RGB[0][1], M_XYZ2RGB[0][2]);
+			fprintf(stderr, "\t\t[G] = [ %13.10g %13.10g %13.10g ] [Y]\n", M_XYZ2RGB[1][0], M_XYZ2RGB[1][1], M_XYZ2RGB[1][2]);
+			fprintf(stderr, "\t\t[B]   [ %13.10g %13.10g %13.10g ] [Z]\n", M_XYZ2RGB[2][0], M_XYZ2RGB[2][1], M_XYZ2RGB[2][2]);
+		}
+		
+		/* Plot linear lookup table fit scatter using gnuplot */
+		#ifdef DEBUG
+		{
+			int k; double t[3]; FILE *gp = popen("gnuplot", "w");
+			
+			fprintf(gp, "set terminal postscript eps enhanced color; set nokey\n");
+			fprintf(gp, "set size 0.75,1.50; set lmargin 10; set bmargin 1.5; set multiplot; set size 0.75,0.47\n");
+			fprintf(gp, "set xrange [-0.1:1.1]; set yrange [0:1]\n");
+			
+			for (k = 0; k < 3; k++) {
+				if (k == 2) {
+					fprintf(gp, "set xlabel 'X (target pullback)'\n");
+					fprintf(gp, "set label 'Scatter after linear regression' at screen 0.4,1.47 center\n");
+				}
+				fprintf(gp, "set ylabel 'Y (device, channel %i)'\n", k);
+				fprintf(gp, "set origin 0,%f\n", 0.06 + 0.47*(2-k));
+				fprintf(gp, "plot x with line lt 2, '-' title 'data' with yerrorbars lt 3 pt 6, '-' title 'data' with yerrorbars lt 1 pt 6\n");
+				
+				/* data points flagged as outliers */
+				for (i = 0; i < n; i++) if (data[i].flag) {
+					(*XYZ2ins)(data[i].XYZ, t); incurves_1(NULL, t, t);
+					fprintf(gp, "%12.10g\t%12.10g\t%12.10g\n", t[k], data[i].in[k], data[i].var[k]);
+				}
+				fprintf(gp, "e\n");
+				
+				/* data points and error bars */
+				for (i = 0; i < n; i++) if (!data[i].flag) {
+					(*XYZ2ins)(data[i].XYZ, t); incurves_1(NULL, t, t);
+					fprintf(gp, "%12.10g\t%12.10g\t%12.10g\n", t[k], data[i].in[k], data[i].var[k]);
+				}
+				fprintf(gp, "e\n");
+			}
+			
+			fprintf(gp, "set nomultiplot\n"); pclose(gp);
+		}
+		#endif /* DEBUG */
+		
 		
 		/* If enough data, find better non-linear fit */
 		if (n > 64) {
+			int n = 0; double t[3];
+			
+			for (i = 0; i < calibration_pts; i++) if (!data[i].flag) {
+				(*ins2XYZ)(data[i].DEV, t);
+				m[0][n] = t[0]; m[1][n] = t[1]; m[2][n] = t[2];
+				
+				m[3][n] = data[i].XYZ[0];
+				m[4][n] = data[i].XYZ[1];
+				m[5][n] = data[i].XYZ[2];
+				
+				n++;
+			}
+			
 			use_higher_order_approximation = 1;
 			P = best_poly_fit(m, n);
-			if (invertible) P1 = best_poly_fit(im, n);
+			//if (invertible) P1 = best_poly_fit(im, n);
 			
-			if (verbose > 3)
+			if (verbose > 2)
 				fprintf(stderr, "\tHave enough data, using better non-linear fit...\n");
 			
-			if (verbose > 4) {
+			if (verbose > 3) {
 				fprintf(stderr, "\tNon-linear approximation coefficients:\n");
 				for (i = 0; i < 19; i++)
 					fprintf(stderr, "\t\t    [ %13.10g %13.10g %13.10g ]\n", P[0][i], P[1][i], P[2][i]);
 			}
 		}
 		
-		/* Prepare remainder for interpolation */
-		for (j = 0; j < n; j++) {
-			tp[0] = m[0][j];
-			tp[1] = m[1][j];
-			tp[2] = m[2][j];
-			
-			op[0] = m[3][j];
-			op[1] = m[4][j];
-			op[2] = m[5][j];
-			
-			if (use_higher_order_approximation)
-				poly_approx(P, tp, ip); else apply33(L, tp, ip);
-			
-			m[0][j] = ip[0];
-			m[1][j] = ip[1];
-			m[2][j] = ip[2];
-			
-			m[3][j] -= m[0][j];
-			m[4][j] -= m[1][j];
-			m[5][j] -= m[2][j];
-			
-			e = XYZ_dE(ip, op);
-			if (e > dE[0]) dE[0] = e;
-			if (e < dE[1]) dE[1] = e;
-			dE[2] += e;
-		}
-		
-		if (verbose > 4)
-			fprintf(stderr, "\tResidual error to correct by multi-dimensional interpolation:\n"
-					"\t\tdE = (%6.4g max, %6.4g min, %6.4g avg)\n", dE[0], dE[1], dE[2]/n);
-		
-		if (verbose > 1) {
-			fprintf(stderr, "\t%i points, prepping for interpolation...", n);
-			fflush(stderr);
-		}
-		
-		*part = subdivide(m, n);
-		
-		/* Do the same for inverted data if required */
-		if (invertible) {
-			for (j = 0; j < n; j++) {
-				tp[0] = im[0][j];
-				tp[1] = im[1][j];
-				tp[2] = im[2][j];
-				
-				if (use_higher_order_approximation)
-					poly_approx(P1, tp, ip); else apply33(L1, tp, ip);
-				
-				im[0][j] = ip[0];
-				im[1][j] = ip[1];
-				im[2][j] = ip[2];
-				
-				im[3][j] -= im[0][j];
-				im[4][j] -= im[1][j];
-				im[5][j] -= im[2][j];
-			}
-			
-			*ipart = subdivide(im, n);
-		}
-		
 		if (verbose > 1) fprintf(stderr, " done.\n");
-	} else {
-		free_matrix(m); if (invertible) free_matrix(im);
-		if (verbose > 1) fprintf(stderr, " ignored.\n");
-	}
+	} else { if (verbose > 1) fprintf(stderr, " ignored.\n"); }
 	
 	free(buffer);
-	
-	
-	#endif
 }
 
 
@@ -708,7 +617,7 @@ void read_calibration_data(FILE *fp)
 		} else if (sscanf(buffer, "CURVE IN%i", &i) == 1) {
 			if (verbose > 1) {
 				fprintf(stderr, "\t%s", buffer);
-				if (verbose > 3) fprintf(stderr, "\n");
+				if (verbose > 2) fprintf(stderr, "\n");
 				else fflush(stderr);
 			}
 			
@@ -718,7 +627,7 @@ void read_calibration_data(FILE *fp)
 		} else if (sscanf(buffer, "CURVE OUT%i", &i) == 1) {
 			if (verbose > 1) {
 				fprintf(stderr, "\t%s", buffer); 
-				if (verbose > 3) fprintf(stderr, "\n");
+				if (verbose > 2) fprintf(stderr, "\n");
 				else fflush(stderr);
 			}
 			
@@ -732,7 +641,7 @@ void read_calibration_data(FILE *fp)
 			
 			if (verbose > 1) {
 				fprintf(stderr, "\t%s", buffer);
-				if (verbose > 3 && !ignore_lut) fprintf(stderr, "\n");
+				if (verbose > 2 && !ignore_lut) fprintf(stderr, "\n");
 				else fflush(stderr);
 			}
 			
@@ -860,8 +769,6 @@ void build_profile(char *file)
 	
 	/* Red, Green and Blue Colorant Tags: */
 	{
-		double M[3][3];
-		
 		icmXYZArray *r = (icmXYZArray *)icco->add_tag(
 			icco, icSigRedColorantTag, icSigXYZArrayType);
 		icmXYZArray *g = (icmXYZArray *)icco->add_tag(
@@ -878,11 +785,15 @@ void build_profile(char *file)
 		g->allocate((icmBase *)g);
 		b->allocate((icmBase *)b);
 		
-		mult33(L, M_RGB2XYZ, M);
-		
-		r->data[0].X = M[0][0]; r->data[0].Y = M[1][0]; r->data[0].Z = M[2][0];
-		g->data[0].X = M[0][1]; g->data[0].Y = M[1][1]; g->data[0].Z = M[2][1];
-		b->data[0].X = M[0][2]; b->data[0].Y = M[1][2]; b->data[0].Z = M[2][2];
+		r->data[0].X = M_RGB2XYZ[0][0];
+		r->data[0].Y = M_RGB2XYZ[1][0];
+		r->data[0].Z = M_RGB2XYZ[2][0];
+		g->data[0].X = M_RGB2XYZ[0][1];
+		g->data[0].Y = M_RGB2XYZ[1][1];
+		g->data[0].Z = M_RGB2XYZ[2][1];
+		b->data[0].X = M_RGB2XYZ[0][2];
+		b->data[0].Y = M_RGB2XYZ[1][2];
+		b->data[0].Z = M_RGB2XYZ[2][2];
 	}
 	
 	/* Red, Green and Blue Tone Reproduction Curve Tags: */
@@ -916,7 +827,7 @@ void build_profile(char *file)
 			b->data[i] = clip(p[2], 0.0, 1.0, &rv);
 		}
 		
-		if (verbose > 2 && rv)
+		if (verbose > 1 && rv)
 			warning("%s: warning: RGB curves were clipped", file);
 	}
 	
@@ -1029,7 +940,7 @@ void build_profile(char *file)
 	icco->header->size = icco->get_size(icco);
 	
 	/* Dump ICC profile header */
-	if (verbose > 2) {
+	if (verbose > 3) {
 		fprintf(stderr, "%s ", file);
 		icco->header->dump(icco->header, stderr, 1);
 	}
@@ -1059,57 +970,65 @@ void test_profile(char *file)
 	
 	
 	/* Test forward lookup */
-	if (calibration_data_pts) {
-		int i = 0, n = 0;
-		double ip[3], op[3], tp[MAXCHANNELS];
+	if (calibration_pts) {
+		int i = 0, n = 0; double ip[3], op[3], tp[MAXCHANNELS];
 		double e = 0.0, dE[3] = {-HUGE /* max */, HUGE /* min */, 0.0 /* avg */};
 		
 		/* Get a conversion object */
 		icmLuBase *luo = icco->get_luobj(icco, icmFwd, icmDefaultIntent, icmLuOrdNorm);
 		if (!luo) error("%s: Error %d, %s", file, icco->errc, icco->err);
 		
-		for (i = 0; i < calibration_data_pts; i += ins_channels+outs_channels) {
-			if (luo->lookup(luo, tp, &(calibration_data_vector[i])) > 1)
+		for (i = 0; i < calibration_pts; i++) {
+			if (luo->lookup(luo, tp, calibration_data[i].in) > 1)
 				error("%s: Error %d, %s", file, icco->errc, icco->err);
 			
-			(*outs2XYZ)(tp, ip);
-			(*outs2XYZ)(&(calibration_data_vector[i+ins_channels]), op);
+			(*outs2XYZ)(tp, ip); (*outs2XYZ)(calibration_data[i].out, op);
 			
 			e = XYZ_dE(ip, op);
-			if (e > dE[0]) dE[0] = e;
-			if (e < dE[1]) dE[1] = e;
-			dE[2] += e; n++;
+			
+			if (!calibration_data[i].flag) {
+				if (e > dE[0]) dE[0] = e;
+				if (e < dE[1]) dE[1] = e;
+				dE[2] += e; n++;
+			}
+			
+			if (verbose > 4) fprintf(stderr, "\n%20s:\tdE = %9.6f %s",
+				calibration_data[i].label, e, calibration_data[i].flag ? "(outlier, ignored)" : "");
 		}
 		
-		if (verbose) fprintf(stderr, "\n\t Forward lookup dE = (%6.4g max, %6.4g min, %6.4g avg)\n", dE[0], dE[1], dE[2]/n);
+		if (verbose > 1) fprintf(stderr, "\n\t Forward lookup dE = (%6.4g max, %6.4g min, %6.4g avg)", dE[0], dE[1], dE[2]/n);
 		
 		luo->free(luo);
 	}
 	
 	/* Test backward lookup */
-	if (calibration_data_pts && invertible) {
-		int i = 0, n = 0;
-		double ip[3], op[3], tp[MAXCHANNELS];
+	if (calibration_pts && invertible) {
+		int i = 0, n = 0; double ip[3], op[3], tp[MAXCHANNELS];
 		double e = 0.0, dE[3] = {-HUGE /* max */, HUGE /* min */, 0.0 /* avg */};
 		
 		/* Get a conversion object */
 		icmLuBase *luo = icco->get_luobj(icco, icmBwd, icmDefaultIntent, icmLuOrdNorm);
 		if (!luo) error("%s: Error %d, %s", file, icco->errc, icco->err);
 		
-		for (i = 0; i < calibration_data_pts; i += ins_channels+outs_channels) {
-			if (luo->lookup(luo, tp, &(calibration_data_vector[i+ins_channels])) > 1)
+		for (i = 0; i < calibration_pts; i++) {
+			if (luo->lookup(luo, tp, calibration_data[i].out) > 1)
 				error("%s: Error %d, %s", file, icco->errc, icco->err);
 			
-			(*ins2XYZ)(tp, ip);
-			(*ins2XYZ)(&(calibration_data_vector[i]), op);
+			(*ins2XYZ)(tp, ip); (*ins2XYZ)(calibration_data[i].in, op);
 			
 			e = XYZ_dE(ip, op);
-			if (e > dE[0]) dE[0] = e;
-			if (e < dE[1]) dE[1] = e;
-			dE[2] += e; n++;
+			
+			if (!calibration_data[i].flag) {
+				if (e > dE[0]) dE[0] = e;
+				if (e < dE[1]) dE[1] = e;
+				dE[2] += e; n++;
+			}
+			
+			if (verbose > 4) fprintf(stderr, "\n%20s:\tdE = %9.6f %s",
+				calibration_data[i].label, e, calibration_data[i].flag ? "(outlier, ignored)" : "");
 		}
 		
-		if (verbose) fprintf(stderr, "\tBackward lookup dE = (%6.4g max, %6.4g min, %6.4g avg)\n", dE[0], dE[1], dE[2]/n);
+		if (verbose > 1) fprintf(stderr, "\n\tBackward lookup dE = (%6.4g max, %6.4g min, %6.4g avg)\n", dE[0], dE[1], dE[2]/n);
 		
 		luo->free(luo);
 	}
