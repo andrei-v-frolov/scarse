@@ -1,4 +1,4 @@
-/* $Id: ipb.c,v 1.11 2005/09/21 02:48:57 afrolov Exp $ */
+/* $Id: ipb.c,v 1.12 2005/09/23 02:53:34 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -267,7 +267,7 @@ void ctransform(void *cntx, double out[], double in[])
 	
 	(*ins2XYZ)(in, t);
 	
-	if (use_higher_order_approximation) poly_approx(P, t, XYZ);
+	if (use_higher_order_approximation) evalf_poly(P, t, XYZ);
 	
 	(*XYZ2outs)(XYZ, out);
 }
@@ -283,7 +283,7 @@ void ctransform_1(void *cntx, double out[], double in[])
 	
 	(*outs2XYZ)(in, XYZ);
 	
-	if (use_higher_order_approximation) poly_approx(P1, XYZ, t);
+	if (use_higher_order_approximation) evalf_poly(P1, XYZ, t);
 	
 	(*XYZ2ins)(t, out);
 }
@@ -568,8 +568,8 @@ void read_lut(FILE *fp)
 			}
 			
 			use_higher_order_approximation = 1;
-			P = best_poly_fit(m, n);
-			//if (invertible) P1 = best_poly_fit(im, n);
+			P = fit_poly(m, n);
+			//if (invertible) P1 = fit_poly(im, n);
 			
 			if (verbose > 2)
 				fprintf(stderr, "\tHave enough data, using better non-linear fit...\n");

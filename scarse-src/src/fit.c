@@ -1,4 +1,4 @@
-/* $Id: fit.c,v 1.8 2005/09/20 03:30:15 afrolov Exp $ */
+/* $Id: fit.c,v 1.9 2005/09/23 02:53:34 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -11,9 +11,7 @@
  * 
  */
 
-#include <stdlib.h>
 #include <math.h>
-
 #include "util.h"
 #include "spaces.h"
 
@@ -86,6 +84,10 @@ double vmin(double p[], double xi[], int n, double (*f)(double []), double eps)
 	if (x != 0.0) for (i = 0; i < n; i++) { xi[i] *= x; p[i] = p[i] + xi[i]; }
 	
 	return fx;
+	
+	#undef EVAL
+	#undef SWAP
+	#undef SIGN
 }
 
 /* n-dimensional minimization (using Powell's method) */
@@ -286,31 +288,16 @@ void fit_matrix(double **data, int n, double M[3][3])
 
 
 
-/**********************************************************************/
-
-/*
- * Linear model fitting:
- *   chi^2 optimization via simulated annealing
- * 
- * Data models:
- *   - power-law curve with saturation
- *   - 3x3 matrix transform with saturation
- * 
- */
-
-
 /******************* Some linear algebra first ************************/
 
 /* Gauss-Jordan elimination with full pivoting */
 /* returns inverse of the matrix in A, and solution to Ax=B in B */
 void gaussj(double **A, int n, double **B, int m)
 {
-	double pivot, Aji;
-	int i, j, k, pr, pc, temp;
-	double **U = matrix(n, n+m);
-	int *c = ivector(n), *r = ivector(n);
+	int i, j, k, pr, pc, r[n], c[n];
+	double pivot, Aji, **U = matrix(n, n+m);
 	
-	#define SWAP(a,b) {temp=(a);(a)=(b);(b)=temp;}
+	#define SWAP(A,B) { int T=(A); (A)=(B); (B)=T; }
 	
 	/* Initialize */
 	for (i = 0; i < n; i++) {
@@ -356,8 +343,6 @@ void gaussj(double **A, int n, double **B, int m)
 	}
 	
 	free_matrix(U);
-	free_vector(c);
-	free_vector(r);
 	
 	#undef SWAP
 }
@@ -365,32 +350,26 @@ void gaussj(double **A, int n, double **B, int m)
 
 /******************* Generalized least square fit *********************/
 
-/* Evaluate approximation y = A * F(x) */
-void approx(double **A, void (*basis)(double [], double []), int d, double x[], double y[])
+/* Evaluate fitted approximation y = A * F(x) */
+void evalf(double **A, void (*basis)(double [], double []), int d, double x[], double y[])
 {
-	int i, j;
-	double *F = vector(d);
+	int i, j; double F[d];
 	
 	(*basis)(x, F);
 	
 	for (i = 0; i < 3; i++) {
-		double *a = A[i], P = 0.0;
+		double *a = A[i]; register double P = 0.0;
 		
-		for (j = d-1; j >= 0; j--) P += a[j]*F[j];
-		
-		y[i] = P;
+		for (j = d-1; j >= 0; j--) P += a[j]*F[j]; y[i] = P;
 	}
-	
-	free_vector(F);
 }
 
 /* Find best fit for x[3..5] = A * F(x[0..2]) wrt perceptual Lab metric */
-double **best_fit(double **x, int n, void (*basis)(double [], double []), int d)
+double **lsq_fit(double **x, int n, void (*basis)(double [], double []), int d)
 {
 	int i, j, k, N = 3*d;
-	double xk[3], yk[3], g[3][3];
-	double *F = vector(d), **A = matrix(3,d);
-	double **S = matrix(N,N), **SY = matrix(N,1);
+	double xk[3], yk[3], g[3][3], F[d];
+	double **A = matrix(3,d), **S = matrix(N,N), **SY = matrix(N,1);
 	
 	/* Zero covariance matrix */
 	for (i = 0; i < N; i++) {
@@ -432,7 +411,6 @@ double **best_fit(double **x, int n, void (*basis)(double [], double []), int d)
 	}
 	
 	/* Cleanup and exit */
-	free_vector(F);
 	free_matrix(S);
 	free_matrix(SY);
 	
@@ -440,42 +418,35 @@ double **best_fit(double **x, int n, void (*basis)(double [], double []), int d)
 }
 
 
-/******************* Wrapper: Linear fit ******************************/
-
-static void linear(double x[], double F[])
-{
-	F[0] = x[0]; F[1] = x[1]; F[2] = x[2];
-}
-
-void best_linear_fit(double **x, int n, double M[3][3])
-{
-	int i, j;
-	double **A = best_fit(x, n, linear, 3);
-	
-	for (i = 0; i < 3; i++) for (j = 0; j < 3; j++) M[i][j] = A[i][j];
-	
-	free_matrix(A);
-}
-
-
 /******************* Wrapper: Polynomial fit **************************/
 
 static void powers(double x[], double F[])
 {
+	#define ORDER 4
+	
 	/* x^1 */
+	#if ORDER>0
 	F[ 0] = x[0];
 	F[ 1] = x[1];
 	F[ 2] = x[2];
+	#define D 3
+	#endif
 	
 	/* x^2 */
+	#if ORDER>1
+	#undef D
 	F[ 3] = x[0]*F[0];
 	F[ 4] = x[0]*F[1];
 	F[ 5] = x[0]*F[2];
 	F[ 6] = x[1]*F[1];
 	F[ 7] = x[1]*F[2];
 	F[ 8] = x[2]*F[2];
+	#define D 9
+	#endif
 	
 	/* x^3 */
+	#if ORDER>2
+	#undef D
 	F[ 9] = x[0]*F[3];
 	F[10] = x[0]*F[4];
 	F[11] = x[0]*F[5];
@@ -486,14 +457,68 @@ static void powers(double x[], double F[])
 	F[16] = x[1]*F[7];
 	F[17] = x[1]*F[8];
 	F[18] = x[2]*F[8];
+	#define D 19
+	#endif
+	
+	/* x^4 */
+	#if ORDER>3
+	#undef D
+	F[19] = x[0]*F[ 9];
+	F[20] = x[0]*F[10];
+	F[21] = x[0]*F[11];
+	F[22] = x[0]*F[12];
+	F[23] = x[0]*F[13];
+	F[24] = x[0]*F[14];
+	F[25] = x[0]*F[15];
+	F[26] = x[0]*F[16];
+	F[27] = x[0]*F[17];
+	F[28] = x[0]*F[18];
+	F[29] = x[1]*F[15];
+	F[30] = x[1]*F[16];
+	F[31] = x[1]*F[17];
+	F[32] = x[1]*F[18];
+	F[33] = x[2]*F[18];
+	#define D 34
+	#endif
+	
+	/* x^5 */
+	#if ORDER>4
+	#undef D
+	F[34] = x[0]*F[19];
+	F[35] = x[0]*F[20];
+	F[36] = x[0]*F[21];
+	F[37] = x[0]*F[22];
+	F[38] = x[0]*F[23];
+	F[39] = x[0]*F[24];
+	F[40] = x[0]*F[25];
+	F[41] = x[0]*F[26];
+	F[42] = x[0]*F[27];
+	F[43] = x[0]*F[28];
+	F[44] = x[0]*F[29];
+	F[45] = x[0]*F[30];
+	F[46] = x[0]*F[31];
+	F[47] = x[0]*F[32];
+	F[48] = x[0]*F[33];
+	F[49] = x[1]*F[29];
+	F[50] = x[1]*F[30];
+	F[51] = x[1]*F[31];
+	F[52] = x[1]*F[32];
+	F[53] = x[1]*F[33];
+	F[54] = x[2]*F[33];
+	#define D 55
+	#endif
+	
+	#undef ORDER
 }
 
-void poly_approx(double **A, double x[], double y[])
+void evalf_poly(double **A, double x[], double y[])
 {
-	approx(A, powers, 19, x, y);
+	evalf(A, powers, D, x, y);
 }
 
-double **best_poly_fit(double **x, int n)
+double **fit_poly(double **x, int n)
 {
-	return best_fit(x, n, powers, 19);
+	return lsq_fit(x, n, powers, D);
 }
+
+#undef D

@@ -1,4 +1,4 @@
-/* $Id: util.h,v 1.8 2005/09/20 03:30:15 afrolov Exp $ */
+/* $Id: util.h,v 1.9 2005/09/23 02:53:35 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -92,6 +92,9 @@ void biscale33(double A[3], double M[3][3], double B[3], double N[3][3]);
 
 /* Data fitting and approximation routines (fit.c) */
 
+double vmin(double p[], double xi[], int n, double (*f)(double []), double eps);
+double mmin(double p[], double **e, int n, double (*f)(double []), double eps);
+
 double lu_curve(double p[], double x);
 double lu_curve_1(double p[], double y);
 double *fit_curve(double **data, int n);
@@ -100,22 +103,11 @@ void fit_matrix(double **data, int n, double M[3][3]);
 
 void gaussj(double **A, int n, double **B, int m);
 
-double **best_fit(double **x, int n, void (*basis)(double [], double []), int d);
-void approx(double **A, void (*basis)(double [], double []), int d, double x[], double y[]);
+void evalf(double **A, void (*basis)(double [], double []), int d, double x[], double y[]);
+double **lsq_fit(double **x, int n, void (*basis)(double [], double []), int d);
 
-void best_linear_fit(double **x, int n, double M[3][3]);
-
-double **best_poly_fit(double **x, int n);
-void poly_approx(double **A, double x[], double y[]);
-
-
-/* Multi-dimensional interpolation routines (interp.c) */
-
-void derivs(double **m, unsigned long n);
-double interp1d(double **m, unsigned long n, double x);
-
-void *subdivide(double **m, int n);
-void interp3d(void *part, double x[], double z[]);
+double **fit_poly(double **x, int n);
+void evalf_poly(double **A, double x[], double y[]);
 
 
 #endif /* __UTIL_H__ */
