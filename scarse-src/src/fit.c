@@ -1,4 +1,4 @@
-/* $Id: fit.c,v 1.10 2005/09/24 00:46:10 afrolov Exp $ */
+/* $Id: fit.c,v 1.11 2005/09/24 03:45:14 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -291,19 +291,18 @@ void fit_matrix(double **data, int n, double M[3][3])
 /******************* Some linear algebra we need **********************/
 
 /* Gauss-Jordan elimination with full pivoting */
-/* returns inverse of the matrix in A, and solution to Ax=B in B */
-void gaussj(double **A, int n, double **B, int m)
+/* returns inverse of the matrix in A, and solution to AX=B */
+void gaussj(int n, double **A, double *B, double *X)
 {
 	int i, j, k, pr, pc, r[n], c[n];
-	double pivot, Aji, **U = matrix(n, n+m);
+	double pivot, Aji, **U = matrix(n, n+1);
 	
 	#define SWAP(A,B) { int T=(A); (A)=(B); (B)=T; }
 	
 	/* Initialize */
 	for (i = 0; i < n; i++) {
 		c[i] = r[i] = i;
-		for (j = 0; j < n; j++) U[i][j] = 0.0; U[i][i] = 1.0;
-		for (j = 0; j < m; j++) U[i][n+j] = B[i][j];
+		for (j = 0; j < n; j++) U[i][j] = 0.0; U[i][i] = 1.0; U[i][n] = B[i];
 	}
 	
 	/* Gauss-Jordan elimination loop */
@@ -326,20 +325,19 @@ void gaussj(double **A, int n, double **B, int m)
 		/* Eliminate all elements in a column except pivot one */
 		A[r[i]][c[i]] = 1.0;
 		for (j = i+1; j < n; j++) A[r[i]][c[j]] /= pivot;
-		for (j = 0; j < n+m; j++) U[r[i]][j] /= pivot;
+		for (j = 0; j <= n; j++) U[r[i]][j] /= pivot;
 		
 		for (j = 0; j < n; j++) if (j != i) {
 			Aji = A[r[j]][c[i]]; A[r[j]][c[i]] = 0.0;
 			for (k = i+1; k < n; k++) A[r[j]][c[k]] -= Aji*A[r[i]][c[k]];
-			for (k = 0; k < n+m; k++) U[r[j]][k] -= Aji*U[r[i]][k];
+			for (k = 0; k <= n; k++) U[r[j]][k] -= Aji*U[r[i]][k];
 		}
 		
 	}
 	
 	/* recover original order of the rows and columns */
 	for (i = 0; i < n; i++) {
-		for (j = 0; j < n; j++) A[c[i]][j] = U[r[i]][j];
-		for (j = 0; j < m; j++) B[c[i]][j] = U[r[i]][n+j];
+		for (j = 0; j < n; j++) A[c[i]][j] = U[r[i]][j]; X[c[i]] = U[r[i]][n];
 	}
 	
 	free_matrix(U);
@@ -369,13 +367,11 @@ double **lsq_fit(double **x, int n, void (*basis)(double [], double []), int d)
 {
 	int i, j, k, N = 3*d;
 	double xk[3], yk[3], g[3][3], F[d];
-	double **A = matrix(3,d), **S = matrix(N,N), **SY = matrix(N,1);
+	double **A = matrix(3,d), **S = matrix(N,N), SY[N];
 	
 	/* Zero covariance matrix */
 	for (i = 0; i < N; i++) {
-		for (j = 0; j < N; j++) S[i][j] = 0.0;
-		
-		SY[i][0] = 0.0;
+		for (j = 0; j < N; j++) S[i][j] = 0.0; SY[i] = 0.0;
 	}
 	
 	/* Accumulate data */
@@ -397,22 +393,21 @@ double **lsq_fit(double **x, int n, void (*basis)(double [], double []), int d)
 				S[i][j] += g[alpha][beta]*F[a]*F[b];
 			}
 			
-			SY[i][0] += (g[alpha][0]*yk[0]+g[alpha][1]*yk[1]+g[alpha][2]*yk[2])*F[a];
+			SY[i] += (g[alpha][0]*yk[0]+g[alpha][1]*yk[1]+g[alpha][2]*yk[2])*F[a];
 		}
 	}
 	
 	/* Find coefficients */
-	gaussj(S, N, SY, 1);
+	gaussj(N, S, SY, SY);
 	
 	for (i = 0; i < N; i++) {
 		int a = i/3, alpha = i%3;
 		
-		A[alpha][a] = SY[i][0];
+		A[alpha][a] = SY[i];
 	}
 	
 	/* Cleanup and exit */
 	free_matrix(S);
-	free_matrix(SY);
 	
 	return A;
 }
@@ -554,7 +549,7 @@ static double Q[3][3];
 /* Prepare data matrix for subsequent interpolation */
 void prepint3d(double **m, int n)
 {
-	int i, j, k; double V[3], C[3][3], **A = matrix(n,n), **B = matrix(n,1);
+	int i, j, k; double V[3], C[3][3], **A = matrix(n,n);
 	
 	/* calculate distance covariance matrix */
 	for (i = 0; i < 3; i++)
@@ -575,15 +570,11 @@ void prepint3d(double **m, int n)
 			A[i][j] = crspl3(qform33(Q, t, t));
 		}
 		
-		for (i = 0; i < n; i++) B[i][0] = m[3+k][i];
-		
 		/* find coefficients */
-		gaussj(A, n, B, 1);
-		
-		for (i = 0; i < n; i++) m[6+k][i] = B[i][0];
+		gaussj(n, A, m[3+k], m[6+k]);
 	}
 	
-	free_matrix(A); free_matrix(B);
+	free_matrix(A);
 }
 
 /* Interpolate function in 3d using completely regularized splines */
