@@ -1,4 +1,4 @@
-/* $Id: fit.c,v 1.9 2005/09/23 02:53:34 afrolov Exp $ */
+/* $Id: fit.c,v 1.10 2005/09/24 00:46:10 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -288,7 +288,7 @@ void fit_matrix(double **data, int n, double M[3][3])
 
 
 
-/******************* Some linear algebra first ************************/
+/******************* Some linear algebra we need **********************/
 
 /* Gauss-Jordan elimination with full pivoting */
 /* returns inverse of the matrix in A, and solution to Ax=B in B */
@@ -522,3 +522,82 @@ double **fit_poly(double **x, int n)
 }
 
 #undef D
+
+
+
+/******************* R^3 -> R^3 interpolation *************************/
+
+/* Completely regularized spline basis in 3d (approximated for speed) */
+static double crspl3(double r2)
+{
+	#define STIFFNESS2 50.0
+	double x2 = STIFFNESS2*r2;
+	double t2 = (0.151643219517124+(0.3164499679425996E-2)*x2)*x2;
+	
+	/* spline basis is actually erf(x/2)/x, but... */
+	return 1.0/sqrt(M_PI*exp(-t2) + x2);
+	
+	#undef STIFFNESS2
+}
+
+/* !!! MODIFY !!! */
+/* Matrix im[1..9][1..n+1] contains:
+ *   im[1..3] = x[1..3]  -  coordinates of points
+ *   im[4..6] = z[1..3]  -  value of function in these points
+ *   im[7..9] = lambda[1..3]  -  projections on spline basis
+ * This routine fills lambda's from coordinates and points
+ */
+/* !!! MODIFY !!! */
+
+static double Q[3][3];
+
+/* Prepare data matrix for subsequent interpolation */
+void prepint3d(double **m, int n)
+{
+	int i, j, k; double V[3], C[3][3], **A = matrix(n,n), **B = matrix(n,1);
+	
+	/* calculate distance covariance matrix */
+	for (i = 0; i < 3; i++)
+		for (k = 0, V[i] = 0.0; k < n; k++) V[i] += m[i][k];
+	
+	for (i = 0; i < 3; i++) for (j = 0; j < 3; j++) {
+		for (k = 0, C[i][j] = 0.0; k < n; k++) C[i][j] += m[i][k]*m[j][k];
+		C[i][j] -= V[i]*V[j]/n; C[i][j] /= n-1;
+	}
+	
+	inv33(C, Q);
+	
+	/* calculate interpolation basis coefficients */
+	for (k = 0; k < 3; k++) {
+		for (i = 0; i < n; i++) for (j = 0; j < n; j++) {
+			double t[3] = {m[0][i]-m[0][j], m[1][i]-m[1][j], m[2][i]-m[2][j]};
+			
+			A[i][j] = crspl3(qform33(Q, t, t));
+		}
+		
+		for (i = 0; i < n; i++) B[i][0] = m[3+k][i];
+		
+		/* find coefficients */
+		gaussj(A, n, B, 1);
+		
+		for (i = 0; i < n; i++) m[6+k][i] = B[i][0];
+	}
+	
+	free_matrix(A); free_matrix(B);
+}
+
+/* Interpolate function in 3d using completely regularized splines */
+void interp3d(double **m, int n, double x[], double z[])
+{
+	int i, k;
+	
+	for (k = 0; k < 3; k++) {
+		double *lambda = m[6+k]; z[k] = 0.0;
+		
+		for (i = 0; i < n; i++) {
+			double t[3] = {x[0]-m[0][i], x[1]-m[1][i], x[2]-m[2][i]};
+			
+			z[k] += lambda[i] * crspl3(qform33(Q, t, t));
+		}
+	}
+}
