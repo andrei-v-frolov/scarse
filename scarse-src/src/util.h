@@ -1,4 +1,4 @@
-/* $Id: util.h,v 1.9 2005/09/23 02:53:35 afrolov Exp $ */
+/* $Id: util.h,v 1.10 2005/09/24 01:20:45 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -20,7 +20,16 @@
 #ifndef __UTIL_H__
 #define __UTIL_H__
 
-#define TINY 1.0e-8
+
+/* Shared definitions */
+
+#ifndef TINY /* machine precision */
+#define TINY 2.2204460492503131e-16
+#endif /* TINY */
+
+#ifndef HUGE /* largest number */
+#define HUGE 1.7976931348623158e308
+#endif /* HUGE */
 
 #define ppow(x,g) ((x > 0.0) ? pow(x, g) : -pow(-x, g))
 
@@ -61,20 +70,10 @@ double **matrix(unsigned long nr, unsigned long nc);
 double **grow_matrix(double **m, unsigned long nr, unsigned long nc);
 void free_matrix(double **m);
 
-
-/* Quick sort and selection routines (sort.c) */
-
 void sort(unsigned long n, double arr[]);
-void sort2(unsigned long n, double arr[], double brr[]);
-void indexx(unsigned long n, double arr[], unsigned long indx[]);
-void rank(unsigned long n, unsigned long indx[], unsigned long irank[]);
-double seln(unsigned long k, unsigned long n, double arr[]);
 
 double avg(unsigned long n, double arr[]);
-double mean(unsigned long n, double arr[]);
-double median(unsigned long n, double arr[]);
 double stddev(unsigned long n, double arr[], double x);
-double absdev(unsigned long n, double arr[], double x);
 
 
 /* 3x3 matrix operations (matrix.c) */

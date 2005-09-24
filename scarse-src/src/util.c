@@ -1,4 +1,4 @@
-/* $Id: util.c,v 1.2 2001/06/28 00:41:57 frolov Exp $ */
+/* $Id: util.c,v 1.3 2005/09/24 01:20:45 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -334,4 +334,57 @@ void free_matrix(double **m)
 	for (i = 0; i < nr; i++) free_vector(m[i]);
 	
 	free((void *)((unsigned long *)(m)-1));
+}
+
+
+
+/******************* Sorting and averages *****************************/
+
+/* sort array into ascending numerical order using heap sort */
+void sort(unsigned long n, double arr[])
+{
+	unsigned long i, j, k = n >> 1, l = n-1; double t;
+	
+	while (n > 1) {
+		if (k > 0) { t = arr[--k]; } else {
+			t = arr[l]; arr[l] = arr[0];
+			if (--l == 0) { arr[0] = t; break; }
+		}
+		
+		i = k; j = k+k+1;
+		
+		while (j <= l) {
+			if (j < l && arr[j] < arr[j+1]) j++;
+			
+			if (t < arr[j]) { arr[i] = arr[j]; i = j; j = j+j+1; }
+			else break;
+		}
+		
+		arr[i] = t;
+	}
+}
+
+/* return average of median-filtered values in array */
+double avg(unsigned long n, double arr[])
+{
+	double S = 0.0;
+	unsigned long i, t = n >> 4;
+	
+	sort(n, arr);
+	
+	/* Ignore tails of distribution when averaging */
+	for (i = t; i < n-t; i++) S += arr[i];
+	
+	return S/(double)(n-2*t);
+}
+
+/* return standard deviation */
+double stddev(unsigned long n, double arr[], double x)
+{
+	double S = 0.0;
+	unsigned long i;
+	
+	for (i = 0; i < n; i++) S += (arr[i] - x) * (arr[i] - x);
+	
+	return sqrt(S/(double)(n-1));
 }
