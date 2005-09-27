@@ -1,4 +1,4 @@
-/* $Id: fit.c,v 1.11 2005/09/24 03:45:14 afrolov Exp $ */
+/* $Id: fit.c,v 1.12 2005/09/27 06:14:25 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -245,14 +245,16 @@ static double lut_chi2(double p[])
 }
 
 /* Fit linear model RGB=M*XYZ to the data */
-void fit_matrix(double **data, int n, double M[3][3])
+int *fit_matrix(double **data, int n, double M[3][3])
 {
 	#define D 3
-	int i, j, k;
+	int i, j, k, *f = ivector(n);
+	double *p = vector(D+1), **e = matrix(D,D);
+	
+	for (i = 0; i < n; i++) f[i] = 0;
 	
 	for (k = 0; k < 3; k++) {
 		double min = 1.0, max = 0.0, *x = data[k+3];
-		double *p = vector(D+1), **e = matrix(D,D);
 		
 		/* data limits */
 		for (i = 0; i < n; i++) {
@@ -278,10 +280,22 @@ void fit_matrix(double **data, int n, double M[3][3])
 		/* optimize */
 		p[D] = mmin(p, e, D, lut_chi2, 1.0e-6);
 		
-		for (i = 0; i < 3; i++) M[k][i] = p[i];
+		/* potential outliers */
+		for (i = 0; i < n; i++) {
+			double y = p[0]*data[0][i] + p[1]*data[1][i] + p[2]*data[2][i];
+			
+			if (y < min - 3.0*data[k+6][i]) f[i] = 1;
+			if (y > max + 3.0*data[k+6][i]) f[i] = 1;
+		}
 		
-		free_matrix(e); free_vector(p);
+		/* store the result */
+		for (i = 0; i < 3; i++) M[k][i] = p[i];
 	}
+	
+	free_matrix(e);
+	free_vector(p);
+	
+	return f;
 	
 	#undef D
 }
@@ -525,39 +539,27 @@ double **fit_poly(double **x, int n)
 /* Completely regularized spline basis in 3d (approximated for speed) */
 static double crspl3(double r2)
 {
-	#define STIFFNESS2 50.0
-	double x2 = STIFFNESS2*r2;
+	double x2 = 50.0*r2; /* the multiplier sets stiffness */
 	double t2 = (0.151643219517124+(0.3164499679425996E-2)*x2)*x2;
 	
 	/* spline basis is actually erf(x/2)/x, but... */
 	return 1.0/sqrt(M_PI*exp(-t2) + x2);
-	
-	#undef STIFFNESS2
 }
 
-/* !!! MODIFY !!! */
-/* Matrix im[1..9][1..n+1] contains:
- *   im[1..3] = x[1..3]  -  coordinates of points
- *   im[4..6] = z[1..3]  -  value of function in these points
- *   im[7..9] = lambda[1..3]  -  projections on spline basis
- * This routine fills lambda's from coordinates and points
- */
-/* !!! MODIFY !!! */
-
-static double Q[3][3];
-
 /* Prepare data matrix for subsequent interpolation */
-void prepint3d(double **m, int n)
+void prepint3d(double **m, int n, double Q[3][3])
 {
 	int i, j, k; double V[3], C[3][3], **A = matrix(n,n);
 	
 	/* calculate distance covariance matrix */
-	for (i = 0; i < 3; i++)
-		for (k = 0, V[i] = 0.0; k < n; k++) V[i] += m[i][k];
+	for (i = 0; i < 3; i++) {
+		for (k = 0, V[i] = 0.0; k < n; k++) V[i] += m[i][k]; V[i] /= n;
+	}
 	
 	for (i = 0; i < 3; i++) for (j = 0; j < 3; j++) {
-		for (k = 0, C[i][j] = 0.0; k < n; k++) C[i][j] += m[i][k]*m[j][k];
-		C[i][j] -= V[i]*V[j]/n; C[i][j] /= n-1;
+		for (k = 0, C[i][j] = 0.0; k < n; k++)
+			C[i][j] += (m[i][k]-V[i])*(m[j][k]-V[j]);
+		C[i][j] /= n-1;
 	}
 	
 	inv33(C, Q);
@@ -571,19 +573,19 @@ void prepint3d(double **m, int n)
 		}
 		
 		/* find coefficients */
-		gaussj(n, A, m[3+k], m[6+k]);
+		gaussj(n, A, m[3+k], m[3+k]);
 	}
 	
 	free_matrix(A);
 }
 
 /* Interpolate function in 3d using completely regularized splines */
-void interp3d(double **m, int n, double x[], double z[])
+void interp3d(double **m, int n, double Q[3][3], double x[], double z[])
 {
 	int i, k;
 	
 	for (k = 0; k < 3; k++) {
-		double *lambda = m[6+k]; z[k] = 0.0;
+		double *lambda = m[3+k]; z[k] = 0.0;
 		
 		for (i = 0; i < n; i++) {
 			double t[3] = {x[0]-m[0][i], x[1]-m[1][i], x[2]-m[2][i]};

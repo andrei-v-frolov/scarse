@@ -1,4 +1,4 @@
-/* $Id: util.h,v 1.11 2005/09/24 03:45:14 afrolov Exp $ */
+/* $Id: util.h,v 1.12 2005/09/27 06:14:25 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -98,7 +98,7 @@ double lu_curve(double p[], double x);
 double lu_curve_1(double p[], double y);
 double *fit_curve(double **data, int n);
 
-void fit_matrix(double **data, int n, double M[3][3]);
+int *fit_matrix(double **data, int n, double M[3][3]);
 
 void gaussj(int n, double **A, double *B, double *X);
 
@@ -107,6 +107,9 @@ double **lsq_fit(double **x, int n, void (*basis)(double [], double []), int d);
 
 double **fit_poly(double **x, int n);
 void evalf_poly(double **A, double x[], double y[]);
+
+void prepint3d(double **m, int n, double Q[3][3]);
+void interp3d(double **m, int n, double Q[3][3], double x[], double z[]);
 
 
 #endif /* __UTIL_H__ */
