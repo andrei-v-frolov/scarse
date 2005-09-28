@@ -1,4 +1,4 @@
-/* $Id: spaces.h,v 1.5 2001/06/28 00:41:57 frolov Exp $ */
+/* $Id: spaces.h,v 1.6 2005/09/28 23:47:27 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -17,10 +17,21 @@
 #ifndef __SPACES_H__
 #define __SPACES_H__
 
-#define MAXCHANNELS 4	/* Compile-time default; change to suit */
+#define MAXCHANNELS 4		/* Compile-time default; change to suit */
+#define BLEND_GAMMA 2.2		/* Compile-time default; change to suit */
 
 
-extern double XYZ_ILLUM[3], XYZ_WPT[3], M_RGB2XYZ[3][3], M_XYZ2RGB[3][3];
+/* Lab conversion constants */
+#define ALPHA 116.0
+#define BETA 16.0
+#define GAMMA 3.0
+#define GAMMA1 (1.0/3.0)
+#define EPSILON (216.0/24389.0)
+#define KAPPA (24389.0/27.0)
+
+	
+extern double XYZ_ILLUM[3], XYZ_WPT[3];
+extern double M_RGB2XYZ[3][3], M_XYZ2RGB[3][3];
 
 void SetPrimaries(double xy[4][2]);
 int LookupPrimaries(char *p, double dest[4][2], double *gamma);

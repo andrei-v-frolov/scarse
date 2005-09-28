@@ -1,4 +1,4 @@
-/* $Id: spaces.c,v 1.6 2001/06/28 00:41:56 frolov Exp $ */
+/* $Id: spaces.c,v 1.7 2005/09/28 23:47:27 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -75,28 +75,14 @@ void Yxy2XYZ(double in[], double out[])
 /* CIE (relative) XYZ to perceptual Lab */
 void XYZ2Lab(double in[], double out[])
 {
-	double *I = XYZ_ILLUM, fx, fy, fz, L;
+	double *I = XYZ_ILLUM, fx, fy, fz;
 	double x = in[0]/I[0], y = in[1]/I[1], z = in[2]/I[2];
 	
-	if (x > 0.008856451586)
-		fx = pow(x, 1.0/3.0);
-	else
-		fx = 7.787036979 * x + 16.0/116.0;
+	fx = (x > EPSILON) ? pow(x, GAMMA1) : (KAPPA * x + BETA)/ALPHA;
+	fy = (y > EPSILON) ? pow(y, GAMMA1) : (KAPPA * y + BETA)/ALPHA;
+	fz = (z > EPSILON) ? pow(z, GAMMA1) : (KAPPA * z + BETA)/ALPHA;
 	
-	if (y > 0.008856451586) {
-		fy = pow(y, 1.0/3.0);
-		L = 116.0 * fy - 16.0;
-	} else {
-		fy = 7.787036979 * y + 16.0/116.0;
-		L = 903.2963058 * y;
-	}
-	
-	if (z > 0.008856451586)
-		fz = pow(z, 1.0/3.0);
-	else
-		fz = 7.787036979 * z + 16.0/116.0;
-	
-	out[0] = L;
+	out[0] = ALPHA * fy - BETA;
 	out[1] = 500.0 * (fx - fy);
 	out[2] = 200.0 * (fy - fz);
 }
@@ -107,25 +93,13 @@ void Lab2XYZ(double in[], double out[])
 	double L = in[0], a = in[1], b = in[2];
 	double *I = XYZ_ILLUM, x, y, z, fx, fy, fz;
 	
-	if (L > 8.0) {
-		fy = (L + 16.0)/116.0;
-		y = pow(fy, 3.0);
-	} else {
-		y = L/903.2963058;
-		fy = 7.787036979 * y + 16.0/116.0;
-	}
-	
+	fy = (L + BETA)/ALPHA;
 	fx = a/500.0 + fy;
-	if (fx > 24.0/116.0)
-		x = pow(fx, 3.0);
-	else
-		x = (fx - 16.0/116.0)/7.787036979;
-	
 	fz = fy - b/200.0;
-	if (fz > 24.0/116.0)
-		z = pow(fz, 3.0);
-	else
-		z = (fz - 16.0/116.0)/7.787036979;
+	
+	y = (L > 8.0) ? pow(fy, GAMMA) : L/KAPPA;
+	x = (fx > (8.0+BETA)/ALPHA) ? pow(fx, GAMMA) : (ALPHA*fx - BETA)/KAPPA;
+	z = (fz > (8.0+BETA)/ALPHA) ? pow(fz, GAMMA) : (ALPHA*fz - BETA)/KAPPA;
 	
 	out[0] = x * I[0];
 	out[1] = y * I[1];
@@ -139,10 +113,7 @@ void XYZ2Luv(double in[], double out[])
 	double X = in[0], Y = in[1], Z = in[2];
 	double *I = XYZ_ILLUM, y = Y/I[1], L, u, v, un, vn;
 	
-	if (y > 0.008856451586)
-		L = 116.0 * pow(y, 1.0/3.0) - 16.0;
-	else
-		L = 903.2963058 * y;
+	L = (y > EPSILON) ? ALPHA*pow(y, GAMMA1) - BETA : KAPPA * y;
 	
 	u = 4.0 * X/(X + 15.0*Y + 3.0*Z);
 	v = 9.0 * Y/(X + 15.0*Y + 3.0*Z);
@@ -161,10 +132,7 @@ void Luv2XYZ(double in[], double out[])
 	double L = in[0], u = in[1], v = in[2];
 	double *I = XYZ_ILLUM, y, un, vn, X, Y, Z;
 	
-	if (L > 8.0)
-		y = pow((L + 16.0)/116.0, 3.0);
-	else
-		y = L/903.2963058;
+	y = (L > 8.0) ? pow((L + BETA)/ALPHA, GAMMA) : L/KAPPA;
 	
 	un = 4.0 * I[0]/(I[0] + 15.0*I[1] + 3.0*I[2]);
 	vn = 9.0 * I[1]/(I[0] + 15.0*I[1] + 3.0*I[2]);
@@ -671,30 +639,15 @@ double XYZ_dE(double XYZ1[], double XYZ2[])
 /* Jacobian of CIE XYZ -> perceptual Lab transformation */
 void dLab_dXYZ(double XYZ[], double dLab[3][3])
 {
-	double *I = XYZ_ILLUM, dx, dy, dz, dL;
+	double *I = XYZ_ILLUM, dx, dy, dz;
 	double x = XYZ[0]/I[0], y = XYZ[1]/I[1], z = XYZ[2]/I[2];
 	
-	if (x > 0.008856451586)
-		dx = pow(x, -2.0/3.0)/3.0/I[0];
-	else
-		dx = 7.787036979/I[0];
-	
-	if (y > 0.008856451586) {
-		dy = pow(y, -2.0/3.0)/3.0/I[1];
-		dL = 116.0 * dy;
-	} else {
-		dy = 7.787036979/I[1];
-		dL = 903.2963058 * dy;
-	}
-	
-	if (z > 0.008856451586)
-		dz = pow(z, -2.0/3.0)/3.0/I[2];
-	else
-		dz = 7.787036979/I[2];
-	
+	dx = (x > EPSILON) ? GAMMA1*pow(x, GAMMA1-1.0) : KAPPA/ALPHA; dx /= I[0];
+	dy = (y > EPSILON) ? GAMMA1*pow(y, GAMMA1-1.0) : KAPPA/ALPHA; dy /= I[1];
+	dz = (z > EPSILON) ? GAMMA1*pow(z, GAMMA1-1.0) : KAPPA/ALPHA; dz /= I[2];
 	
 	dLab[0][0] = 0.0;		/* dL/dX */
-	dLab[0][1] = dL;		/* dL/dY */
+	dLab[0][1] = ALPHA*dy;		/* dL/dY */
 	dLab[0][2] = 0.0;		/* dL/dZ */
 	dLab[1][0] = 500.0*dx;		/* da/dX */
 	dLab[1][1] = -500.0*dy;		/* da/dY */
