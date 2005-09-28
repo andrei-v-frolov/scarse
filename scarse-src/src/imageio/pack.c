@@ -1,4 +1,4 @@
-/* $Id: pack.c,v 1.1 2001/01/26 22:45:32 frolov Exp $ */
+/* $Id: pack.c,v 1.2 2005/09/28 01:18:42 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -35,8 +35,8 @@ int noisify = 0;
 /* Quantize value to specified number of bits */
 static int quantize(int bits, double v)
 {
-	register double max = (double)(1 << bits);
-	register double sv = noisify ? (max-1.0)*v + ran() : (max-TINY)*v;
+	register double max = (double)((1 << bits) - 1);
+	register double sv = max*v + (noisify ? ran() : 0.5);
 	
 	return (int)floor(sv);
 }

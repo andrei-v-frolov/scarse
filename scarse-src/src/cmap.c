@@ -1,4 +1,4 @@
-/* $Id: cmap.c,v 1.2 2001/06/27 03:58:55 frolov Exp $ */
+/* $Id: cmap.c,v 1.3 2005/09/28 01:18:33 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -427,7 +427,7 @@ static void collect_dist(distribution *d, double x)
 	
 	if (x < 0.0) d->under++;
 	else if (x > 1.0) d->over++;
-	else d->count[(int)floor((256.0 - TINY)*x)]++;
+	else d->count[(int)floor(255.0*x+0.5)]++;
 	
 	d->total++;
 }
@@ -671,15 +671,10 @@ static void calibration_loop(image *in, image *out)
 /* Linear table interpolation accelerator */
 static double ltinterp(double y[256], double x, int *clip)
 {
-	int i;
-	double sx, ix;
+	double sx = 255.0*x, ix = floor(sx); int i = (int)ix;
 	
-	if (x <= 0.0) { if (x < 0.0) *clip |= 1; return y[0]; }
-	else if (x >= 1.0) { if (x > 1.0) *clip |= 1; return y[255]; }
-	
-	sx = (255.0-TINY)*x;
-	ix = floor(sx);
-	i = (int)ix;
+	if (i < 0) { *clip |= 1; return y[0]; }
+	else if (i > 254) { *clip |= 1; return y[255]; }
 	
 	return y[i] + (sx-ix)*(y[i+1]-y[i]);
 }
@@ -787,7 +782,7 @@ static void adjustment_loop(image *in, image *out)
 		warning("%s: %lu pixels were out of gamut and had been clipped (%4.2g%%)",
 			out->file, clipped, 100.0*clipped/out->w/out->h);
 	
-	free_matrix(c);
+	if (adjust & ADJ_CURVES) free_matrix(c);
 }
 
 
