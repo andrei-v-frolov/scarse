@@ -1,4 +1,4 @@
-/* $Id: ipb.c,v 1.14 2005/09/29 06:31:02 afrolov Exp $ */
+/* $Id: ipb.c,v 1.15 2005/09/29 21:51:30 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -542,7 +542,7 @@ void read_lut(FILE *fp)
 	}
 	
 	/* Polynomial regression and interpolation */
-	if (!ignore_lut && n > 64) {
+	if (!ignore_lut && !matrix_only && n > 64) {
 		double **m = matrix(6, n), **im = matrix(6, n);
 		
 		for (i = 0, n = 0; i < calibration_pts; i++) if (!data[i].flag) {
@@ -805,8 +805,7 @@ void build_profile(char *file)
 	
 	/* Red, Green and Blue Tone Reproduction Curve Tags: */
 	{
-		int i, rv = 0;
-		double p[MAXCHANNELS];
+		int i, rv = 0; double p[MAXCHANNELS];
 		
 		icmCurve *r = (icmCurve *)icco->add_tag(
 				icco, icSigRedTRCTag, icSigCurveType);
@@ -818,24 +817,43 @@ void build_profile(char *file)
 		if (!r || !g || !b)
 			error("add_tag failed: %d, %s", icco->errc, icco->err);
 		
-		r->flag = g->flag = b->flag = icmCurveSpec; 	/* Specified version */
-		r->size = g->size = b->size = lut_size_1d;	/* Number of entries (min must be 2!) */
-		
-		r->allocate((icmBase *)r);	/* Allocate space */
-		g->allocate((icmBase *)g);
-		b->allocate((icmBase *)b);
-		
-		for (i = 0; i < lut_size_1d; i++) {
-			p[0] = p[1] = p[2] = i/(lut_size_1d-1.0);
+		if (use_ins_curves) { /* tabulated curve */
+			r->flag = g->flag = b->flag = icmCurveSpec;
+			r->size = g->size = b->size = lut_size_1d;
 			
-			incurves(NULL, p, p);	/* Transfer function */
-			r->data[i] = clip(p[0], 0.0, 1.0, &rv);
-			g->data[i] = clip(p[1], 0.0, 1.0, &rv);
-			b->data[i] = clip(p[2], 0.0, 1.0, &rv);
+			/* Allocate space */
+			r->allocate((icmBase *)r);
+			g->allocate((icmBase *)g);
+			b->allocate((icmBase *)b);
+			
+			for (i = 0; i < lut_size_1d; i++) {
+				p[0] = p[1] = p[2] = i/(lut_size_1d-1.0);
+				
+				incurves(NULL, p, p);	/* Transfer function */
+				r->data[i] = clip(p[0], 0.0, 1.0, &rv);
+				g->data[i] = clip(p[1], 0.0, 1.0, &rv);
+				b->data[i] = clip(p[2], 0.0, 1.0, &rv);
+			}
+			
+			if (verbose > 1 && rv)
+				warning("%s: warning: RGB curves were clipped", file);
+		} else if (ins_gamma != 1.0) { /* power law */
+			r->flag = g->flag = b->flag = icmCurveGamma;
+			
+			/* Allocate space */
+			r->allocate((icmBase *)r);
+			g->allocate((icmBase *)g);
+			b->allocate((icmBase *)b);
+			
+			r->data[0] = g->data[0] = b->data[0] = ins_gamma;
+		} else { /* identity */
+			r->flag = g->flag = b->flag = icmCurveLin;
+			
+			/* Allocate space */
+			r->allocate((icmBase *)r);
+			g->allocate((icmBase *)g);
+			b->allocate((icmBase *)b);
 		}
-		
-		if (verbose > 1 && rv)
-			warning("%s: warning: RGB curves were clipped", file);
 	}
 	
 	
