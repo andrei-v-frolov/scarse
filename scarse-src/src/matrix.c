@@ -1,4 +1,4 @@
-/* $Id: matrix.c,v 1.3 2001/06/28 00:41:56 frolov Exp $ */
+/* $Id: matrix.c,v 1.4 2005/09/29 06:31:02 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -83,18 +83,4 @@ double qform33(double M[3][3], double A[3], double B[3])
 	return	(A[0]*M[0][0]+A[1]*M[1][0]+A[2]*M[2][0])*B[0] +
 		(A[0]*M[0][1]+A[1]*M[1][1]+A[2]*M[2][1])*B[1] +
 		(A[0]*M[0][2]+A[1]*M[1][2]+A[2]*M[2][2])*B[2];
-}
-
-/* bi-scale matrix:  N = diag(A)*M*diag(B) */
-void biscale33(double A[3], double M[3][3], double B[3], double N[3][3])
-{
-	N[0][0] = A[0]*M[0][0]*B[0];
-	N[0][1] = A[0]*M[0][1]*B[1];
-	N[0][2] = A[0]*M[0][2]*B[2];
-	N[1][0] = A[1]*M[1][0]*B[0];
-	N[1][1] = A[1]*M[1][1]*B[1];
-	N[1][2] = A[1]*M[1][2]*B[2];
-	N[2][0] = A[2]*M[2][0]*B[0];
-	N[2][1] = A[2]*M[2][1]*B[1];
-	N[2][2] = A[2]*M[2][2]*B[2];
 }

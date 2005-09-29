@@ -1,4 +1,4 @@
-/* $Id: ipb.c,v 1.13 2005/09/27 06:14:25 afrolov Exp $ */
+/* $Id: ipb.c,v 1.14 2005/09/29 06:31:02 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -63,8 +63,9 @@ char *usage_msg[] = {
 	"		known standards are:",
 	"		    illuminants: D50 (default), D55, D65, D75, D93, A, B, C, E",
 	"		  RGB primaries: 700/525/450nm, EBU, HDTV, P22, Trinitron",
-	"		     RGB spaces: Adobe (default), Apple, Bruce, ColorMatch, CIE,",
-	"		                 NTSC, PAL/SECAM, sRGB, SMPTE-C, WideGamut",
+	"		     RGB spaces: Adobe (default), Apple, Best, Beta, Bruce, CIE,",
+	"		                 ColorMatch, ECI, EktaSpace, NTSC, PAL/SECAM,",
+	"		                 ProPhoto, SMPTE-C, sRGB (simplified), WideGamut",
 	"",
 	" Color mapping algorithm options:",
 	"  -C file	calibration data; '-' means read from stdin",
@@ -555,7 +556,7 @@ void read_lut(FILE *fp)
 			n++;
 		}
 		
-		if (use_poly = 0) { /* polynomial fit */
+		if (use_poly = 1) { /* polynomial fit */
 			if (verbose > 1) { fprintf(stderr, " poly fit..."); fflush(stderr); }
 			
 			P = fit_poly(m, n); if (invertible) P1 = fit_poly(im, n);
@@ -702,7 +703,7 @@ void build_profile(char *file)
 		icmHeader *h = icco->header;
 		
 		/* Profile creator */
-		h->cmmId = h->creator = str2tag("scrs");
+		h->cmmId = h->creator = str2tag("SCRS");
 		
 		/* Values that must be set before writing */
 		h->deviceClass     = class;
@@ -990,7 +991,7 @@ void test_profile(char *file)
 			
 			(*outs2XYZ)(tp, ip); (*outs2XYZ)(calibration_data[i].out, op);
 			
-			e = XYZ_dE(ip, op);
+			e = dE_XYZ(ip, op);
 			
 			if (!calibration_data[i].flag) {
 				if (e > dE[0]) dE[0] = e;
@@ -1022,7 +1023,7 @@ void test_profile(char *file)
 			
 			(*ins2XYZ)(tp, ip); (*ins2XYZ)(calibration_data[i].in, op);
 			
-			e = XYZ_dE(ip, op);
+			e = dE_XYZ(ip, op);
 			
 			if (!calibration_data[i].flag) {
 				if (e > dE[0]) dE[0] = e;
@@ -1124,7 +1125,7 @@ int main(int argc, char *argv[])
 			}
 			break;
 		case 'p':				/* Primaries */
-			if (!LookupPrimaries(optarg, primaries, NULL)) {
+			if (!LookupPrimaries(optarg, primaries, &ins_gamma)) {
 				double x, y;
 				char *s = strchr(optarg, ':');
 				

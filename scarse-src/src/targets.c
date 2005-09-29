@@ -1,4 +1,4 @@
-/* $Id: targets.c,v 1.7 2001/06/27 03:58:57 frolov Exp $ */
+/* $Id: targets.c,v 1.8 2005/09/29 06:31:03 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -651,19 +651,17 @@ void render_IT87_target(target *tg, char *file, char *geometry)
 	
 	/* Translate target data to Lab colorspace */
 	{
-		int i;
-		double t[3], *Dmin = tg->data[tg->grayscale[0]].XYZ;
+		int i; double WPT_CAT[3][3], t[3];
+		double *Dmin = tg->data[tg->grayscale[0]].XYZ;
 		
 		/* background pixel - make it neutral gray */
 		Lab[-1][0] = 50.0; Lab[-1][1] = Lab[-1][2] = 0.0;
 		
+		/* map media white point (Dmin) to standard illuminant as per ICC specs */
+		XYZ_CAT(Dmin, XYZ_ILLUM, WPT_CAT);
+		
 		for (i = 0; i < tg->pts; i++) {
-			/* map Dmin to PCS illuminant as per ICC specs */
-			t[0] = tg->data[i].XYZ[0]/Dmin[0]*XYZ_ILLUM[0];
-			t[1] = tg->data[i].XYZ[1]/Dmin[1]*XYZ_ILLUM[1];
-			t[2] = tg->data[i].XYZ[2]/Dmin[2]*XYZ_ILLUM[2];
-			
-			XYZ2Lab(t, Lab[i]);
+			apply33(WPT_CAT, tg->data[i].XYZ, t); XYZ2Lab(t, Lab[i]);
 		}
 	}
 	

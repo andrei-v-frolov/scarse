@@ -1,4 +1,4 @@
-/* $Id: util.h,v 1.12 2005/09/27 06:14:25 afrolov Exp $ */
+/* $Id: util.h,v 1.13 2005/09/29 06:31:03 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -31,7 +31,7 @@
 #define HUGE 1.7976931348623158e308
 #endif /* HUGE */
 
-#define ppow(x,g) ((x > 0.0) ? pow(x, g) : -pow(-x, g))
+#define ppow(x,g) ((x >= 0.0) ? pow(x, g) : -pow(-x, g))
 
 
 /* Utility routines (util.c) */
@@ -86,7 +86,6 @@ void inv33(double M[3][3], double N[3][3]);
 void mult33(double M[3][3], double N[3][3], double L[3][3]);
 void apply33(double M[3][3], double A[3], double B[3]);
 double qform33(double M[3][3], double A[3], double B[3]);
-void biscale33(double A[3], double M[3][3], double B[3], double N[3][3]);
 
 
 /* Data fitting and approximation routines (fit.c) */

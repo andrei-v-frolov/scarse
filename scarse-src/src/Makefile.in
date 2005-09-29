@@ -1,5 +1,5 @@
 ################################################################
-# $Id: Makefile.in,v 1.6 2005/09/24 01:20:46 afrolov Exp $
+# $Id: Makefile.in,v 1.7 2005/09/29 06:31:01 afrolov Exp $
 # Makefile for Scarse source code
 ################################################################
 
@@ -27,7 +27,7 @@ VERSION = $(shell cat ../VERSION)
 ################################################################
 
 # Define if you want debugging code compiled in
-DEBUG = 1
+# DEBUG = 1
 
 
 # Compiler flags
@@ -91,22 +91,8 @@ imageio.a: $(addprefix imageio/, pack.o tiff.o ppm.o imageio.o)
 # Implicit rules
 ################################################################
 
-ifdef PGPLOT
-
-# DEBUG/PGPLOT rules
-%.o: %.c $(hdrs)
-	$(CC) $(ALLFLAGS) $(PGPFLGS) -c $< -o $@
-
-%: %.o
-	$(F77) $(LDFLAGS) $^ $(LIBS) $(PGPLIBS) -o $@
-
-else
-
-# Production rules
 %.o: %.c $(hdrs)
 	$(CC) $(ALLFLAGS) -c $< -o $@
 
 %: %.o
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
-
-endif

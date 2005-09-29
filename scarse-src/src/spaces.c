@@ -1,10 +1,10 @@
-/* $Id: spaces.c,v 1.7 2005/09/28 23:47:27 afrolov Exp $ */
+/* $Id: spaces.c,v 1.8 2005/09/29 06:31:02 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
  * Generic color space conversions.
  * 
- * Copyright (C) 1999-2001 Scarse Project
+ * Copyright (C) 1999-2005 Scarse Project
  * Distributed under the terms of GNU Public License.
  * 
  * Maintainer: Andrei Frolov <andrei@phys.ualberta.ca>
@@ -12,9 +12,13 @@
  */
 
 /* CREDITS:
- *   Based on Color Spaces FAQ by David Bourgin
- *   CIE Lab code borrowed from icclib & examples by Graeme W. Gill
- *   HSV code adopted from ???
+ *   Originally based on Color Spaces FAQ by David Bourgin.
+ *   CIE Lab code based on icclib & examples by Graeme W. Gill,
+ *   with coefficients replaced by rationals to avoid discontinuity.
+ *   Futher color space info from http://www.brucelindbloom.com/
+ *   and http://www.aim-dtp.net/aim/technology/cie_xyz/cie_xyz.htm
+ *   Chromatic adaptation code based on research paper by
+ *   S. Susstrunk, J. Holm, and G. D. Finlayson, SPIE 4300 (2001).
  */
 
 /* TODO:
@@ -35,40 +39,31 @@
 /* IMPORTANT NOTE:
  * ===============
  *   XYZ values used here are based on RELATIVE colorimetry, meaning they
- *   are scaled so that physical white point is always mapped to the same
- *   value - the so-called PCS illuminant (specified to be D50 by ICC specs).
+ *   are transformed so that physical white point is always mapped to the
+ *   same value - the so-called PCS illuminant (specified to be D50).
+ *   Currently, this is done by Bradford chromatic adaptation transform.
  *   In addition, the max Y value we use is 1.0, not 100.0 as it's often set!
  */
 
 /* PCS illuminant and white point (in absolute XYZ representation) */
-double XYZ_ILLUM[3] = {0.9642, 1.0000, 0.8249};	/* Always CIE illuminant D50 */
-double   XYZ_WPT[3] = {0.9505, 1.0000, 1.0891};	/* Adobe RGB (D65) by default */
+double XYZ_ILLUM[3] = {0.964203, 1.000000, 0.824905}; /* Always CIE illuminant D50 */
+double   XYZ_WPT[3] = {0.950455, 1.000000, 1.089050}; /* Adobe RGB (D65) by default */
 
 
-/* CIE (relative) XYZ to CIE (absolute) Yxy */
+/* CIE XYZ to CIE Yxy */
 void XYZ2Yxy(double in[], double out[])
 {
-	double *I = XYZ_ILLUM, *W = XYZ_WPT;
-	double X = (in[0]/I[0])*W[0];
-	double Y = (in[1]/I[1])*W[1];
-	double Z = (in[2]/I[2])*W[2];
-	double S = X + Y + Z;
+	double X = in[0], Y = in[1], Z = in[2], S = X + Y + Z;
 	
-	out[0] = Y;
-	out[1] = X/S;
-	out[2] = Y/S;
+	out[0] = Y; out[1] = X/S; out[2] = Y/S;
 }
 
-/* CIE (absolute) Yxy to CIE (relative) XYZ */
+/* CIE Yxy to CIE XYZ */
 void Yxy2XYZ(double in[], double out[])
 {
-	double *I = XYZ_ILLUM, *W = XYZ_WPT;
-	double Y = in[0], x = in[1], y = in[2];
-	double z = 1.0 - (x + y), X = (x/y)*Y, Z = (z/y)*Y;
+	double Y = in[0], x = in[1], y = in[2], z = 1.0 - (x + y);
 	
-	out[0] = (X/W[0])*I[0];
-	out[1] = (Y/W[1])*I[1];
-	out[2] = (Z/W[2])*I[2];
+	out[0] = (x/y)*Y; out[1] = Y; out[2] = (z/y)*Y;
 }
 
 
@@ -170,6 +165,64 @@ void XYZ2Gray(double in[], double *out)
 
 
 
+/***************** Chromatic adaptation transforms ********************/
+
+/* CAT matrices; default is Bradford (used by Photoshop) */
+static double XYZscale[3][3] = {
+	{ 1.0000, 0.0000, 0.0000 },
+	{ 0.0000, 1.0000, 0.0000 },
+	{ 0.0000, 0.0000, 1.0000 }
+};
+static double vonKries[3][3] = {
+	{ 0.3897, 0.6890,-0.0787 },
+	{-0.2298, 1.1834, 0.0464 },
+	{ 0.0000, 0.0000, 1.0000 }
+};
+static double Bradford[3][3] = {
+	{ 0.8951, 0.2664,-0.1614 },
+	{-0.7502, 1.7135, 0.0367 },
+	{ 0.0389,-0.0685, 1.0296 }
+};
+static double Sharp[3][3] = {
+	{ 1.2694,-0.0988,-0.1706 },
+	{-0.8364, 1.8006, 0.0357 },
+	{ 0.0297,-0.0315, 1.0018 }
+};
+static double CMCCAT[3][3] = {
+	{ 0.7982, 0.3389,-0.1371 },
+	{-0.5918, 1.5512, 0.0406 },
+	{ 0.0008, 0.0239, 0.9753 }
+};
+static double M709[3][3] = {
+	{ 3.0803,-1.5373,-0.5430 },
+	{-0.9211, 1.8758, 0.0453 },
+	{ 0.0528,-0.2040, 1.1511 }
+};
+static double ROMM[3][3] = {
+	{ 1.2977,-0.2556,-0.0422 },
+	{-0.5251, 1.5082, 0.0169 },
+	{ 0.0000, 0.0000, 1.0000 }
+};
+static double Prime[3][3] = {
+	{ 2.0016,-0.5576,-0.4440 },
+	{-0.7997, 1.6627, 0.1371 },
+	{ 0.0089,-0.0190, 1.0100 }
+};
+
+
+/* Calculate matrix M that maps XYZ space from illuminant 1 to illuminant 2 */
+void XYZ_CAT(double IL1[3], double IL2[3], double M[3][3])
+{
+	double WPT1[3], WPT2[3], S1[3][3], S2[3][3], T[3][3];
+	
+	apply33(CAT, IL1, WPT1); diag33(WPT1, T); mult33(T, CAT, S1);
+	apply33(CAT, IL2, WPT2); diag33(WPT2, T); mult33(T, CAT, S2);
+	
+	inv33(S1, T); mult33(T, S2, M);
+}
+
+
+
 /***************** Standard RGB primaries and spaces ******************/
 
 /* Standard illuminants (in xy representation) */
@@ -184,15 +237,20 @@ static const double IlC[2] = {0.3101, 0.3162};
 static const double IlE[2] = {0.3333, 0.3333};
 
 /* Standard RGB primaries (in xy representation) */
-static const double WideG[6] = {
-	0.7347, 0.2653,
-	0.1152, 0.8264,
-	0.1566, 0.0177
-};
 static const double Adobe[6] = {
 	0.6400, 0.3300,
 	0.2100, 0.7100,
 	0.1500, 0.0600
+};
+static const double Best[6] = {
+	0.7347, 0.2653,
+	0.2150, 0.7750,
+	0.1300, 0.0350
+};
+static const double Beta[6] = {
+	0.6888, 0.3112,
+	0.1986, 0.7551,
+	0.1265, 0.0352
 };
 static const double Bruce[6] = {
 	0.6400, 0.3300,
@@ -204,10 +262,20 @@ static const double CIE[6] = {
 	0.2740, 0.7170,
 	0.1670, 0.0090
 };
+static const double Don4[6] = {
+	0.6960, 0.3000,
+	0.2150, 0.7650,
+	0.1300, 0.0350
+};
 static const double EBU[6] = {
 	0.6400, 0.3300,
 	0.2900, 0.6000,
 	0.1500, 0.0600
+};
+static const double Ekta[6] = {
+	0.6950, 0.3050,
+	0.2600, 0.7000,
+	0.1100, 0.0050
 };
 static const double HDTV[6] = {
 	0.6400, 0.3300,
@@ -224,6 +292,11 @@ static const double P22[6] = {
 	0.2950, 0.6050,
 	0.1550, 0.0770
 };
+static const double ProPh[6] = {
+	0.7347, 0.2653,
+	0.1596, 0.8404,
+	0.0366, 0.0001
+};
 static const double SMPTE[6] = {
 	0.6300, 0.3400,
 	0.3100, 0.5950,
@@ -233,6 +306,11 @@ static const double Trini[6] = {
 	0.6250, 0.3400,
 	0.2800, 0.5950,
 	0.1550, 0.0700
+};
+static const double WideG[6] = {
+	0.7347, 0.2653,
+	0.1152, 0.8264,
+	0.1566, 0.0177
 };
 
 /* Index of standard illuminants, primaries and color spaces */
@@ -258,15 +336,21 @@ static struct { char *label; const double *wpt, *rgb, g; } primaries_idx[] = {
 	/* Standard RGB spaces */
 	{"Adobe",		D65,	Adobe,	2.2},
 	{"Apple",		D65,	Trini,	1.8},
+	{"Best",		D50,	Best,	2.2},
+	{"Beta",		D50,	Beta,	2.2},
 	{"Bruce",		D65,	Bruce,	2.2},
-	{"ColorMatch",		D50,	P22,	1.8},
 	{"CIE",			IlE,	CIE,	2.2},
+	{"ColorMatch",		D50,	P22,	1.8},
+	{"Don4",		D50,	Don4,	2.2},
+	{"ECI",			D50,	NTSC,	1.8},
+	{"EktaSpace",		D50,	Ekta,	2.2},
 	{"NTSC",		IlC,	NTSC,	2.2},
 	{"PAL/SECAM",		D65,	EBU,	2.2},
-	{"sRGB",		D65,	HDTV,	2.2},
+	{"ProPhoto",		D50,	ProPh,	1.8},
 	{"SMPTE-C",		D65,	SMPTE,	2.2},
+	{"sRGB",		D65,	HDTV,	2.2},
 	{"WideGamut",		D50,	WideG,	2.2},
-	NULL
+	{NULL,			NULL,	NULL,	0.0}
 };
 
 
@@ -308,23 +392,21 @@ int LookupPrimaries(char *p, double dest[4][2], double *gamma)
 
 /* RGB <=> XYZ conversion matrices */
 double M_RGB2XYZ[3][3] = {		/* Adobe RGB by default */
-	{0.5850, 0.1882, 0.1910},
-	{0.2973, 0.6274, 0.0753},
-	{0.0205, 0.0535, 0.7509}
+	{ 0.609741, 0.205276, 0.149185 },
+	{ 0.311111, 0.625671, 0.063217 },
+	{ 0.019470, 0.060867, 0.744568 }
 };
 
 double M_XYZ2RGB[3][3] = {		/* Adobe RGB by default */
-	{ 2.0125, -0.5650, -0.4551},
-	{-0.9554,  1.8760,  0.0549},
-	{ 0.0133, -0.1184,  1.3403}
+	{ 1.962529,-0.610675,-0.341372 },
+	{-0.978754, 1.916152, 0.033418 },
+	{ 0.028692,-0.140673, 1.349255 }
 };
 
 
 /* Set white point and RGB primaries */
 void SetPrimaries(double xy[4][2])
 {
-	double E1[3][3], Y[3];
-	
 	/* white point (in absolute XYZ representation) */
 	double W[3] = {
 		        xy[0][0]/xy[0][1],
@@ -339,12 +421,15 @@ void SetPrimaries(double xy[4][2])
 		{(1.0-xy[1][0]-xy[1][1])/xy[1][1], (1.0-xy[2][0]-xy[2][1])/xy[2][1], (1.0-xy[3][0]-xy[3][1])/xy[3][1]}
 	};
 	
-	/* relative XYZ scaling factor */
-	double *I = XYZ_ILLUM, S[3] = { I[0]/W[0], I[1]/W[1], I[2]/W[2] };
+	double E1[3][3], T[3][3], Q[3][3], Y[3];
 	
+	/* Calculate RGB -> absolute XYZ transfer matrix Q */
+	inv33(E, E1); apply33(E1, W, Y); diag33(Y, T); mult33(E, T, Q);
 	
-	inv33(E, E1); apply33(E1, W, Y);
-	biscale33(S, E, Y, M_RGB2XYZ);
+	/* Map XYZ white point to standard illuminant using CAT */
+	XYZ_CAT(W, XYZ_ILLUM, T); mult33(T, Q, M_RGB2XYZ);
+	
+	/* Calculate XYZ -> RGB transfer matrix */
 	inv33(M_RGB2XYZ, M_XYZ2RGB);
 	
 	XYZ_WPT[0] = W[0];
@@ -618,7 +703,7 @@ int channels(icColorSpaceSignature any)
 /***************** Error metric on various spaces *********************/
 
 /* CIE Lab */
-double Lab_dE(double Lab1[], double Lab2[])
+double dE_Lab(double Lab1[], double Lab2[])
 {
 	double d[3] = {Lab2[0]-Lab1[0], Lab2[1]-Lab1[1], Lab2[2]-Lab1[2]};
 	
@@ -626,18 +711,18 @@ double Lab_dE(double Lab1[], double Lab2[])
 }
 
 /* CIE XYZ */
-double XYZ_dE(double XYZ1[], double XYZ2[])
+double dE_XYZ(double XYZ1[], double XYZ2[])
 {
 	double Lab1[3], Lab2[3];
 	
 	XYZ2Lab(XYZ1, Lab1);
 	XYZ2Lab(XYZ2, Lab2);
 	
-	return Lab_dE(Lab1, Lab2);
+	return dE_Lab(Lab1, Lab2);
 }
 
 /* Jacobian of CIE XYZ -> perceptual Lab transformation */
-void dLab_dXYZ(double XYZ[], double dLab[3][3])
+static void dLab_dXYZ(double XYZ[], double dLab[3][3])
 {
 	double *I = XYZ_ILLUM, dx, dy, dz;
 	double x = XYZ[0]/I[0], y = XYZ[1]/I[1], z = XYZ[2]/I[2];
@@ -658,7 +743,7 @@ void dLab_dXYZ(double XYZ[], double dLab[3][3])
 }
 
 /* Error metric on CIE XYZ space */
-void XYZ_metric(double XYZ[], double g[3][3])
+void gXYZ(double XYZ[], double g[3][3])
 {
 	int i, j;
 	double J[3][3];

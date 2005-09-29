@@ -1,4 +1,4 @@
-/* $Id: calibrate.c,v 1.6 2001/06/27 03:58:55 frolov Exp $ */
+/* $Id: calibrate.c,v 1.7 2005/09/29 06:31:01 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -85,7 +85,7 @@ static target         *ctg = NULL;
 /* Output scanner color correction data */
 static void scanner_correction(FILE *fp, target *tg)
 {
-	int i, j;
+	int i, j; double WPT_CAT[3][3], t[3];
 	double *Dmin = tg->data[tg->grayscale[0]].XYZ;
 	double *Dmax = tg->data[tg->grayscale[tg->graypts-1]].XYZ;
 	
@@ -99,17 +99,18 @@ static void scanner_correction(FILE *fp, target *tg)
 	fprintf(fp, "WHITEPOINT: %12.10g %12.10g %12.10g;\n", Dmin[0], Dmin[1], Dmin[2]);
 	fprintf(fp, "BLACKPOINT: %12.10g %12.10g %12.10g;\n\n", Dmax[0], Dmax[1], Dmax[2]);
 	
+	/* map media white point (Dmin) to standard illuminant as per ICC specs */
+	XYZ_CAT(Dmin, XYZ_ILLUM, WPT_CAT);
+	
 	/* Curves */
 	for (j = 0; j < 3; j++) {
-		/* map Dmin to white point as per ICC specs */
-		double wp, g; XYZ2Gray(Dmin, &wp);
-		
 		fprintf(fp, "CURVE IN%i (%s):\n", j, channel[j]);
 		
 		for (i = 0; i < tg->graypts; i++) {
-			XYZ2Gray(tg->data[tg->grayscale[i]].XYZ, &g);
+			apply33(WPT_CAT, tg->data[tg->grayscale[i]].XYZ, t);
+			
 			fprintf(fp, "      %12.10g %12.10g \t%12.10g\n",
-				tg->data[tg->grayscale[i]].RGB[j], g/wp,
+				tg->data[tg->grayscale[i]].RGB[j], t[1],
 				tg->data[tg->grayscale[i]].RGB[3+j]);
 		}
 		
@@ -121,16 +122,16 @@ static void scanner_correction(FILE *fp, target *tg)
 		fprintf(fp, "LUT:\n");
 		
 		for (i = 0; i < tg->pts; i++)
+			apply33(WPT_CAT, tg->data[i].XYZ, t);
+			
 			fprintf(fp, " %4s %12.10g %12.10g %12.10g %12.10g %12.10g %12.10g \t%12.10g %12.10g %12.10g\n",
 				tg->data[i].label,
 				/* RGB values */
 				tg->data[i].RGB[0],
 				tg->data[i].RGB[1],
 				tg->data[i].RGB[2],
-				/* XYZ values; map Dmin to PCS illuminant as per ICC specs */
-				tg->data[i].XYZ[0]/Dmin[0]*XYZ_ILLUM[0],
-				tg->data[i].XYZ[1]/Dmin[1]*XYZ_ILLUM[1],
-				tg->data[i].XYZ[2]/Dmin[2]*XYZ_ILLUM[2],
+				/* XYZ values */
+				t[0], t[1], t[2],
 				/* measured deviation */
 				tg->data[i].RGB[3],
 				tg->data[i].RGB[4],

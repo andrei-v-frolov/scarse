@@ -1,10 +1,10 @@
-/* $Id: spaces.h,v 1.6 2005/09/28 23:47:27 afrolov Exp $ */
+/* $Id: spaces.h,v 1.7 2005/09/29 06:31:03 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
  * Generic color spaces conversions - declarations.
  * 
- * Copyright (C) 1999 Scarse Project
+ * Copyright (C) 1999-2005 Scarse Project
  * Distributed under the terms of GNU Public License.
  * 
  * Maintainer: Andrei Frolov <andrei@phys.ualberta.ca>
@@ -29,13 +29,18 @@
 #define EPSILON (216.0/24389.0)
 #define KAPPA (24389.0/27.0)
 
-	
+/* Chromatic adaptation transform */
+#define CAT Bradford
+
+/* Illuminant, white point, and primaries */
 extern double XYZ_ILLUM[3], XYZ_WPT[3];
 extern double M_RGB2XYZ[3][3], M_XYZ2RGB[3][3];
 
 void SetPrimaries(double xy[4][2]);
 int LookupPrimaries(char *p, double dest[4][2], double *gamma);
+void XYZ_CAT(double IL1[3], double IL2[3], double M[3][3]);
 
+/* Color space conversions */
 void XYZ2Yxy(double in[], double out[]);
 void Yxy2XYZ(double in[], double out[]);
 void XYZ2Lab(double in[], double out[]);
@@ -62,9 +67,10 @@ transform toXYZ(int any); transform fromXYZ(int any);
 int str2ColorSpaceSignature(char *s);
 int channels(int any);
 
-double Lab_dE(double Lab1[], double Lab2[]);
-double XYZ_dE(double XYZ1[], double XYZ2[]);
-void XYZ_metric(double XYZ[], double g[3][3]);
+/* Color space error metrics */
+double dE_Lab(double Lab1[], double Lab2[]);
+double dE_XYZ(double XYZ1[], double XYZ2[]);
+void gXYZ(double XYZ[], double g[3][3]);
 
 
 #endif /* __SPACES_H__ */

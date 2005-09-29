@@ -1,4 +1,4 @@
-/* $Id: fit.c,v 1.12 2005/09/27 06:14:25 afrolov Exp $ */
+/* $Id: fit.c,v 1.13 2005/09/29 06:31:02 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -395,8 +395,7 @@ double **lsq_fit(double **x, int n, void (*basis)(double [], double []), int d)
 			yk[i] = x[i+3][k];
 		}
 		
-		(*basis)(xk, F);
-		XYZ_metric(yk, g);
+		(*basis)(xk, F); gXYZ(yk, g);
 		
 		for (i = 0; i < N; i++) {
 			int a = i/3, alpha = i%3;

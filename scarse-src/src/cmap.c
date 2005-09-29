@@ -1,4 +1,4 @@
-/* $Id: cmap.c,v 1.3 2005/09/28 01:18:33 afrolov Exp $ */
+/* $Id: cmap.c,v 1.4 2005/09/29 06:31:01 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -533,7 +533,7 @@ static void analyze_image(image *in)
 			lu_pipe(icc_pipe1, p, p);
 			
 			if (icc_pipe) L = p[1];
-			else L = 0.2973*pow(p[0], DEFAULT_GAMMA) + 0.6274*pow(p[1], DEFAULT_GAMMA) + 0.0753*pow(p[2], DEFAULT_GAMMA);
+			else L = 0.2973*pow(p[0], BLEND_GAMMA) + 0.6274*pow(p[1], BLEND_GAMMA) + 0.0753*pow(p[2], BLEND_GAMMA);
 			collect_dist(d[3], L);
 			
 			lu_pipe(icc_pipe2, p, p);
@@ -762,7 +762,7 @@ static void adjustment_loop(image *in, image *out)
 					double c2 = 1.0 + (dx*dx + dy*dy)/f2, c4 = c2*c2/norm;
 					
 					/* We assume default gamma if not in XYZ */
-					if (!icc_pipe) c4 = pow(c4, 1.0/DEFAULT_GAMMA);
+					if (!icc_pipe) c4 = pow(c4, 1.0/BLEND_GAMMA);
 					
 					for (i = 0; i < 3; i++) p[i] *= c4;
 				}
