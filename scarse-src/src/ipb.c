@@ -1,4 +1,4 @@
-/* $Id: ipb.c,v 1.16 2005/09/29 22:48:33 afrolov Exp $ */
+/* $Id: ipb.c,v 1.17 2005/09/30 06:20:19 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -766,8 +766,9 @@ void build_profile(char *file)
 		
 		bpt->size = 1;
 		bpt->allocate((icmBase *)bpt);	/* Allocate space */
-		/* intentionally set to zero to avoid shadow clipping */
-		bpt->data[0].X = bpt->data[0].Y = bpt->data[0].Z = 0.0;
+		bpt->data[0].X = media_black_pt[0];
+		bpt->data[0].Y = media_black_pt[1];
+		bpt->data[0].Z = media_black_pt[2];
 	}
 	
 	
