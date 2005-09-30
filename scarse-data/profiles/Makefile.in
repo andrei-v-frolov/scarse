@@ -1,0 +1,21 @@
+################################################################
+# Profile library Makefile
+################################################################
+
+SHELL = /bin/sh
+
+
+# Targets
+.PHONY: all clean distclean install
+
+all: profiles.pl
+	perl $^ > index.html
+
+clean:
+	rm -rf `cat FILES | awk '{print $1;}'`
+
+distclean: clean
+	rm -f FILES index.html *.tar.gz *.zip
+
+install:
+	echo "Profile library installation is not implemented yet..."
