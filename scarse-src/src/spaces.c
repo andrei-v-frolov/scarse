@@ -1,4 +1,4 @@
-/* $Id: spaces.c,v 1.8 2005/09/29 06:31:02 afrolov Exp $ */
+/* $Id: spaces.c,v 1.9 2005/09/30 20:38:49 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -215,8 +215,8 @@ void XYZ_CAT(double IL1[3], double IL2[3], double M[3][3])
 {
 	double WPT1[3], WPT2[3], S1[3][3], S2[3][3], T[3][3];
 	
-	apply33(CAT, IL1, WPT1); diag33(WPT1, T); mult33(T, CAT, S1);
-	apply33(CAT, IL2, WPT2); diag33(WPT2, T); mult33(T, CAT, S2);
+	apply33(M_CAT, IL1, WPT1); diag33(WPT1, T); mult33(T, M_CAT, S1);
+	apply33(M_CAT, IL2, WPT2); diag33(WPT2, T); mult33(T, M_CAT, S2);
 	
 	inv33(S1, T); mult33(T, S2, M);
 }

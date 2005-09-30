@@ -1,4 +1,4 @@
-/* $Id: calibrate.c,v 1.8 2005/09/30 06:48:01 afrolov Exp $ */
+/* $Id: calibrate.c,v 1.9 2005/09/30 20:38:49 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -85,7 +85,7 @@ static target         *ctg = NULL;
 /* Output scanner color correction data */
 static void scanner_correction(FILE *fp, target *tg)
 {
-	int i, j; double WPT_CAT[3][3], t[3];
+	int i, j; double WPT_CAT[3][3], WPT[3], BPT[3], t[3];
 	double *Dmin = tg->data[tg->grayscale[0]].XYZ;
 	double *Dmax = tg->data[tg->grayscale[tg->graypts-1]].XYZ;
 	
@@ -99,15 +99,27 @@ static void scanner_correction(FILE *fp, target *tg)
 	fprintf(fp, "WHITEPOINT: %12.10g %12.10g %12.10g;\n", Dmin[0], Dmin[1], Dmin[2]);
 	fprintf(fp, "BLACKPOINT: %12.10g %12.10g %12.10g;\n\n", Dmax[0], Dmax[1], Dmax[2]);
 	
-	/* map media white point (Dmin) to standard illuminant as per ICC specs */
-	XYZ_CAT(Dmin, XYZ_ILLUM, WPT_CAT);
+	
+	/* media white point (Dmin) is mapped to standard illuminant as per ICC specs */
+	/* media black point (Dmin) is shifted to neutral black (keeping the same density) */
+	#define scale33(M, A, B, C) { double T[3] = { A[0]-B[0], A[1]-B[1], A[2]-B[2] }; apply33(M, T, C); }
+	
+	for (j = 0; j < 3; j++) {
+		double beta = Dmax[1]/Dmin[1];
+		
+		WPT[j] = (Dmin[j] - Dmax[j])/(1.0 - beta);
+		BPT[j] = (Dmax[j] - beta*Dmin[j])/(1.0 - beta);
+	}
+	
+	XYZ_CAT(WPT, XYZ_ILLUM, WPT_CAT);
+	
 	
 	/* Curves */
 	for (j = 0; j < 3; j++) {
 		fprintf(fp, "CURVE IN%i (%s):\n", j, channel[j]);
 		
 		for (i = 0; i < tg->graypts; i++) {
-			apply33(WPT_CAT, tg->data[tg->grayscale[i]].XYZ, t);
+			scale33(WPT_CAT, tg->data[tg->grayscale[i]].XYZ, BPT, t);
 			
 			fprintf(fp, "      %12.10g %12.10g \t%12.10g\n",
 				tg->data[tg->grayscale[i]].RGB[j], t[1],
@@ -122,7 +134,7 @@ static void scanner_correction(FILE *fp, target *tg)
 		fprintf(fp, "LUT:\n");
 		
 		for (i = 0; i < tg->pts; i++) {
-			apply33(WPT_CAT, tg->data[i].XYZ, t);
+			scale33(WPT_CAT, tg->data[i].XYZ, BPT, t);
 			
 			fprintf(fp, " %4s %12.10g %12.10g %12.10g %12.10g %12.10g %12.10g \t%12.10g %12.10g %12.10g\n",
 				tg->data[i].label,

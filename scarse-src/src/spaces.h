@@ -1,4 +1,4 @@
-/* $Id: spaces.h,v 1.7 2005/09/29 06:31:03 afrolov Exp $ */
+/* $Id: spaces.h,v 1.8 2005/09/30 20:38:49 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -30,7 +30,7 @@
 #define KAPPA (24389.0/27.0)
 
 /* Chromatic adaptation transform */
-#define CAT Bradford
+#define M_CAT Bradford
 
 /* Illuminant, white point, and primaries */
 extern double XYZ_ILLUM[3], XYZ_WPT[3];
