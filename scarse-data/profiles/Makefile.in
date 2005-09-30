@@ -4,6 +4,13 @@
 
 SHELL = /bin/sh
 
+PATH := ../../src:$(PATH)
+
+PREFIX  = /usr/local
+DATADIR = $(PREFIX)/share/cms/profiles
+
+INSTALL = install
+
 
 # Targets
 .PHONY: all clean distclean install
@@ -12,10 +19,11 @@ all: profiles.pl
 	perl $^ > index.html
 
 clean:
-	rm -rf `cat FILES | awk '{print $1;}'`
+	rm -rf `cat FILES | awk '{print $$1;}'`
 
 distclean: clean
 	rm -f FILES index.html *.tar.gz *.zip
 
 install:
-	echo "Profile library installation is not implemented yet..."
+	$(INSTALL) -d $(DATADIR)
+	for i in spaces/*; do $(INSTALL) -m 0644 $$i $(DATADIR)/$${i#spaces/}; done
