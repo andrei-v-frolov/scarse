@@ -1,4 +1,4 @@
-/* $Id: calibrate.c,v 1.7 2005/09/29 06:31:01 afrolov Exp $ */
+/* $Id: calibrate.c,v 1.8 2005/09/30 06:48:01 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -121,7 +121,7 @@ static void scanner_correction(FILE *fp, target *tg)
 	if (tg->pts > tg->graypts) {
 		fprintf(fp, "LUT:\n");
 		
-		for (i = 0; i < tg->pts; i++)
+		for (i = 0; i < tg->pts; i++) {
 			apply33(WPT_CAT, tg->data[i].XYZ, t);
 			
 			fprintf(fp, " %4s %12.10g %12.10g %12.10g %12.10g %12.10g %12.10g \t%12.10g %12.10g %12.10g\n",
@@ -137,6 +137,7 @@ static void scanner_correction(FILE *fp, target *tg)
 				tg->data[i].RGB[4],
 				tg->data[i].RGB[5]
 			);
+		}
 		
 		fprintf(fp, ";\n\n");
 	}
