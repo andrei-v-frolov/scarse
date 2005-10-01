@@ -1,4 +1,4 @@
-/* $Id: spaces.c,v 1.9 2005/09/30 20:38:49 afrolov Exp $ */
+/* $Id: spaces.c,v 1.10 2005/10/01 01:18:40 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -7,7 +7,7 @@
  * Copyright (C) 1999-2005 Scarse Project
  * Distributed under the terms of GNU Public License.
  * 
- * Maintainer: Andrei Frolov <andrei@phys.ualberta.ca>
+ * Maintainer: Andrei Frolov <afrolov@stanford.edu>
  * 
  */
 
@@ -19,6 +19,15 @@
  *   and http://www.aim-dtp.net/aim/technology/cie_xyz/cie_xyz.htm
  *   Chromatic adaptation code based on research paper by
  *   S. Susstrunk, J. Holm, and G. D. Finlayson, SPIE 4300 (2001).
+ */
+
+/* IMPORTANT NOTE:
+ * ===============
+ *   XYZ values used here are based on RELATIVE colorimetry, meaning they
+ *   are transformed so that physical white point is always mapped to the
+ *   same value - the so-called PCS illuminant (specified to be D50).
+ *   Currently, this is done by Bradford chromatic adaptation transform.
+ *   In addition, the max Y value we use is 1.0, not 100.0 as it's often set!
  */
 
 /* TODO:
@@ -34,140 +43,13 @@
 
 
 
-/******************* CIE XYZ based spaces *****************************/
-
-/* IMPORTANT NOTE:
- * ===============
- *   XYZ values used here are based on RELATIVE colorimetry, meaning they
- *   are transformed so that physical white point is always mapped to the
- *   same value - the so-called PCS illuminant (specified to be D50).
- *   Currently, this is done by Bradford chromatic adaptation transform.
- *   In addition, the max Y value we use is 1.0, not 100.0 as it's often set!
- */
+/***************** Chromatic adaptation transforms ********************/
 
 /* PCS illuminant and white point (in absolute XYZ representation) */
 double XYZ_ILLUM[3] = {0.964203, 1.000000, 0.824905}; /* Always CIE illuminant D50 */
 double   XYZ_WPT[3] = {0.950455, 1.000000, 1.089050}; /* Adobe RGB (D65) by default */
 
-
-/* CIE XYZ to CIE Yxy */
-void XYZ2Yxy(double in[], double out[])
-{
-	double X = in[0], Y = in[1], Z = in[2], S = X + Y + Z;
-	
-	out[0] = Y; out[1] = X/S; out[2] = Y/S;
-}
-
-/* CIE Yxy to CIE XYZ */
-void Yxy2XYZ(double in[], double out[])
-{
-	double Y = in[0], x = in[1], y = in[2], z = 1.0 - (x + y);
-	
-	out[0] = (x/y)*Y; out[1] = Y; out[2] = (z/y)*Y;
-}
-
-
-/* CIE (relative) XYZ to perceptual Lab */
-void XYZ2Lab(double in[], double out[])
-{
-	double *I = XYZ_ILLUM, fx, fy, fz;
-	double x = in[0]/I[0], y = in[1]/I[1], z = in[2]/I[2];
-	
-	fx = (x > EPSILON) ? pow(x, GAMMA1) : (KAPPA * x + BETA)/ALPHA;
-	fy = (y > EPSILON) ? pow(y, GAMMA1) : (KAPPA * y + BETA)/ALPHA;
-	fz = (z > EPSILON) ? pow(z, GAMMA1) : (KAPPA * z + BETA)/ALPHA;
-	
-	out[0] = ALPHA * fy - BETA;
-	out[1] = 500.0 * (fx - fy);
-	out[2] = 200.0 * (fy - fz);
-}
-
-/* Perceptual Lab to CIE (relative) XYZ */
-void Lab2XYZ(double in[], double out[])
-{
-	double L = in[0], a = in[1], b = in[2];
-	double *I = XYZ_ILLUM, x, y, z, fx, fy, fz;
-	
-	fy = (L + BETA)/ALPHA;
-	fx = a/500.0 + fy;
-	fz = fy - b/200.0;
-	
-	y = (L > 8.0) ? pow(fy, GAMMA) : L/KAPPA;
-	x = (fx > (8.0+BETA)/ALPHA) ? pow(fx, GAMMA) : (ALPHA*fx - BETA)/KAPPA;
-	z = (fz > (8.0+BETA)/ALPHA) ? pow(fz, GAMMA) : (ALPHA*fz - BETA)/KAPPA;
-	
-	out[0] = x * I[0];
-	out[1] = y * I[1];
-	out[2] = z * I[2];
-}
-
-
-/* CIE (relative) XYZ to Luv */
-void XYZ2Luv(double in[], double out[])
-{
-	double X = in[0], Y = in[1], Z = in[2];
-	double *I = XYZ_ILLUM, y = Y/I[1], L, u, v, un, vn;
-	
-	L = (y > EPSILON) ? ALPHA*pow(y, GAMMA1) - BETA : KAPPA * y;
-	
-	u = 4.0 * X/(X + 15.0*Y + 3.0*Z);
-	v = 9.0 * Y/(X + 15.0*Y + 3.0*Z);
-	
-	un = 4.0 * I[0]/(I[0] + 15.0*I[1] + 3.0*I[2]);
-	vn = 9.0 * I[1]/(I[0] + 15.0*I[1] + 3.0*I[2]);
-	
-	out[0] = L;
-	out[1] = 13.0 * L * (u - un);
-	out[2] = 13.0 * L * (v - vn);
-}
-
-/* Luv to CIE (relative) XYZ */
-void Luv2XYZ(double in[], double out[])
-{
-	double L = in[0], u = in[1], v = in[2];
-	double *I = XYZ_ILLUM, y, un, vn, X, Y, Z;
-	
-	y = (L > 8.0) ? pow((L + BETA)/ALPHA, GAMMA) : L/KAPPA;
-	
-	un = 4.0 * I[0]/(I[0] + 15.0*I[1] + 3.0*I[2]);
-	vn = 9.0 * I[1]/(I[0] + 15.0*I[1] + 3.0*I[2]);
-	
-	u = u / 13.0 / L + un;
-	v = v / 13.0 / L + vn;
-	
-	Y = y * I[1];
-	X = 9.0/4.0 * Y * u/v;
-	Z = 3.0*Y/v - 5.0*Y - X/3.0;
-	
-	out[0] = X;
-	out[1] = Y;
-	out[2] = Z;
-}
-
-
-/* Gray to CIE (relative) XYZ */
-void Gray2XYZ(double *in, double out[])
-{
-	double g = *in, *I = XYZ_ILLUM;
-	
-	out[0] = g * I[0];
-	out[1] = g * I[1];
-	out[2] = g * I[2];
-}
-
-/* CIE (relative) XYZ to gray */
-void XYZ2Gray(double in[], double *out)
-{
-	double *I = XYZ_ILLUM;
-	
-	*out = in[1]/I[1];
-}
-
-
-
-/***************** Chromatic adaptation transforms ********************/
-
-/* CAT matrices; default is Bradford (used by Photoshop) */
+/* CAT matrices; default is Bradford (as used by Photoshop) */
 static double XYZscale[3][3] = {
 	{ 1.0000, 0.0000, 0.0000 },
 	{ 0.0000, 1.0000, 0.0000 },
@@ -219,6 +101,123 @@ void XYZ_CAT(double IL1[3], double IL2[3], double M[3][3])
 	apply33(M_CAT, IL2, WPT2); diag33(WPT2, T); mult33(T, M_CAT, S2);
 	
 	inv33(S1, T); mult33(T, S2, M);
+}
+
+
+
+/******************* CIE XYZ based spaces *****************************/
+
+/* CIE XYZ to CIE Yxy */
+void XYZ2Yxy(double in[], double out[])
+{
+	double X = in[0], Y = in[1], Z = in[2], S = X + Y + Z;
+	
+	out[0] = Y; out[1] = X/S; out[2] = Y/S;
+}
+
+/* CIE Yxy to CIE XYZ */
+void Yxy2XYZ(double in[], double out[])
+{
+	double Y = in[0], x = in[1], y = in[2], z = 1.0 - (x + y);
+	
+	out[0] = (x/y)*Y; out[1] = Y; out[2] = (z/y)*Y;
+}
+
+
+/* CIE XYZ to perceptual Lab */
+void XYZ2Lab(double in[], double out[])
+{
+	double *I = XYZ_ILLUM, fx, fy, fz;
+	double x = in[0]/I[0], y = in[1]/I[1], z = in[2]/I[2];
+	
+	fx = (x > EPSILON) ? pow(x, GAMMA1) : (KAPPA * x + BETA)/ALPHA;
+	fy = (y > EPSILON) ? pow(y, GAMMA1) : (KAPPA * y + BETA)/ALPHA;
+	fz = (z > EPSILON) ? pow(z, GAMMA1) : (KAPPA * z + BETA)/ALPHA;
+	
+	out[0] = ALPHA * fy - BETA;
+	out[1] = 500.0 * (fx - fy);
+	out[2] = 200.0 * (fy - fz);
+}
+
+/* Perceptual Lab to CIE XYZ */
+void Lab2XYZ(double in[], double out[])
+{
+	double L = in[0], a = in[1], b = in[2];
+	double *I = XYZ_ILLUM, x, y, z, fx, fy, fz;
+	
+	fy = (L + BETA)/ALPHA;
+	fx = a/500.0 + fy;
+	fz = fy - b/200.0;
+	
+	y = (L > 8.0) ? pow(fy, GAMMA) : L/KAPPA;
+	x = (fx > (8.0+BETA)/ALPHA) ? pow(fx, GAMMA) : (ALPHA*fx - BETA)/KAPPA;
+	z = (fz > (8.0+BETA)/ALPHA) ? pow(fz, GAMMA) : (ALPHA*fz - BETA)/KAPPA;
+	
+	out[0] = x * I[0];
+	out[1] = y * I[1];
+	out[2] = z * I[2];
+}
+
+
+/* CIE XYZ to Luv */
+void XYZ2Luv(double in[], double out[])
+{
+	double X = in[0], Y = in[1], Z = in[2];
+	double *I = XYZ_ILLUM, y = Y/I[1], L, u, v, un, vn;
+	
+	L = (y > EPSILON) ? ALPHA*pow(y, GAMMA1) - BETA : KAPPA * y;
+	
+	u = 4.0 * X/(X + 15.0*Y + 3.0*Z);
+	v = 9.0 * Y/(X + 15.0*Y + 3.0*Z);
+	
+	un = 4.0 * I[0]/(I[0] + 15.0*I[1] + 3.0*I[2]);
+	vn = 9.0 * I[1]/(I[0] + 15.0*I[1] + 3.0*I[2]);
+	
+	out[0] = L;
+	out[1] = 13.0 * L * (u - un);
+	out[2] = 13.0 * L * (v - vn);
+}
+
+/* Luv to CIE XYZ */
+void Luv2XYZ(double in[], double out[])
+{
+	double L = in[0], u = in[1], v = in[2];
+	double *I = XYZ_ILLUM, y, un, vn, X, Y, Z;
+	
+	y = (L > 8.0) ? pow((L + BETA)/ALPHA, GAMMA) : L/KAPPA;
+	
+	un = 4.0 * I[0]/(I[0] + 15.0*I[1] + 3.0*I[2]);
+	vn = 9.0 * I[1]/(I[0] + 15.0*I[1] + 3.0*I[2]);
+	
+	u = u / 13.0 / L + un;
+	v = v / 13.0 / L + vn;
+	
+	Y = y * I[1];
+	X = 9.0/4.0 * Y * u/v;
+	Z = 3.0*Y/v - 5.0*Y - X/3.0;
+	
+	out[0] = X;
+	out[1] = Y;
+	out[2] = Z;
+}
+
+
+/* Gray to CIE XYZ */
+void Gray2XYZ(double *in, double out[])
+{
+	double g = *in, *I = XYZ_ILLUM;
+	
+	out[0] = g * I[0];
+	out[1] = g * I[1];
+	out[2] = g * I[2];
+}
+
+/* CIE (relative) XYZ to gray */
+void XYZ2Gray(double in[], double *out)
+{
+	double *I = XYZ_ILLUM;
+	
+	*out = in[1]/I[1];
 }
 
 
@@ -462,33 +461,24 @@ void Gray2RGB(double *in, double out[])
 }
 
 
-/* RGB to HSV */
-/* h = [0,360], s = [0,1], v = [0,1] */
+/* RGB to HSV (h = [0,360], s = [0,1], v = [0,1]) */
 void RGB2HSV(double in[], double out[])
 {
-	double r = in[0], g = in[1], b = in[2];
 	double min, max, delta, h, s, v;
+	double r = in[0], g = in[1], b = in[2];
 	
 	min = r;  if (g < min) min = g;  if (b < min) min = b;
 	max = r;  if (g > max) max = g;  if (b > max) max = b;
 	
-	delta = max - min;
+	if (max == 0.0) { out[0] = out[1] = out[2] = 0.0; return; }
 	
-	if (max == 0.0) {
-		out[0] = out[1] = out[2] = 0.0; return;
-	}
-	
-	v = max;
-	s = delta/max;
+	delta = max - min; v = max; s = delta/max;
 		
-	if (r == max)
-		h = (g - b)/delta;		// between yellow & magenta
-	else if (g == max)
-		h = 2.0 + (b - r)/delta;	// between cyan & yellow
-	else
-		h = 4.0 + (r - g)/delta;	// between magenta & cyan
+	if (r == max)      h = (g - b)/delta;		// between yellow & magenta
+	else if (g == max) h = 2.0 + (b - r)/delta;	// between cyan & yellow
+	else               h = 4.0 + (r - g)/delta;	// between magenta & cyan
 		
-	h *= 60.0; if (h < 0.0) h += 360.0;
+	h *= 60.0; if (h < 0.0) h += 360.0;
 	
 	out[0] = h;
 	out[1] = s;
@@ -498,13 +488,10 @@ void RGB2HSV(double in[], double out[])
 /* HSV to RGB */
 void HSV2RGB(double in[], double out[])
 {
+	int i; double f, p, q, t, r, g, b;
 	double h = in[0], s = in[1], v = in[2];
-	double f, p, q, t, r, g, b;
-	int i;
 	
-	if (s == 0) {
-		out[0] = out[1] = out[2] = v; return;
-	}
+	if (s == 0) { out[0] = out[1] = out[2] = v; return; }
 	
 	h /= 60.0; i = floor(h); f = h - i;
 	
@@ -512,19 +499,13 @@ void HSV2RGB(double in[], double out[])
 	q = v * (1.0 - s * f);
 	t = v * (1.0 - s * (1.0 - f));
 	
-	switch (i) {
-		case 0:
-			r = v; g = t; b = p; break;
-		case 1:
-			r = q; g = v; b = p; break;
-		case 2:
-			r = p; g = v; b = t; break;
-		case 3:
-			r = p; g = q; b = v; break;
-		case 4:
-			r = t; g = p; b = v; break;
-		case 5: default:
-			r = v; g = p; b = q; break;
+	switch (i%6) {
+		case 0: r = v; g = t; b = p; break;
+		case 1: r = q; g = v; b = p; break;
+		case 2: r = p; g = v; b = t; break;
+		case 3: r = p; g = q; b = v; break;
+		case 4: r = t; g = p; b = v; break;
+		case 5: r = v; g = p; b = q; break;
 	}
 	
 	out[0] = r;
@@ -601,26 +582,16 @@ composite (XYZ2CMY, CMY2CMYK, XYZ2CMYK)
 transform toXYZ(icColorSpaceSignature any)
 {
 	switch (any) {
-		case icSigXYZData:
-			return vcopy3;
-		case icSigLabData:
-			return Lab2XYZ;
-		case icSigLuvData:
-			return Luv2XYZ;
-		case icSigYxyData:
-			return Yxy2XYZ;
-		case icSigRgbData:
-			return RGB2XYZ;
-		case icSigGrayData:
-			return Gray2XYZ;
-		case icSigHsvData:
-			return HSV2XYZ;
-		case icSigCmyData:
-			return CMY2XYZ;
-		case icSigCmykData:
-			return CMYK2XYZ;
-		default:
-			error("[%s]: Color space not supported",
+		case icSigXYZData:  return vcopy3;
+		case icSigLabData:  return Lab2XYZ;
+		case icSigLuvData:  return Luv2XYZ;
+		case icSigYxyData:  return Yxy2XYZ;
+		case icSigRgbData:  return RGB2XYZ;
+		case icSigGrayData: return Gray2XYZ;
+		case icSigHsvData:  return HSV2XYZ;
+		case icSigCmyData:  return CMY2XYZ;
+		case icSigCmykData: return CMYK2XYZ;
+		default: error("[%s]: Color space not supported",
 				ColorSpaceSignature2str(any));
 	}
 	
@@ -631,26 +602,16 @@ transform toXYZ(icColorSpaceSignature any)
 transform fromXYZ(icColorSpaceSignature any)
 {
 	switch (any) {
-		case icSigXYZData:
-			return vcopy3;
-		case icSigLabData:
-			return XYZ2Lab;
-		case icSigLuvData:
-			return XYZ2Luv;
-		case icSigYxyData:
-			return XYZ2Yxy;
-		case icSigRgbData:
-			return XYZ2RGB;
-		case icSigGrayData:
-			return XYZ2Gray;
-		case icSigHsvData:
-			return XYZ2HSV;
-		case icSigCmyData:
-			return XYZ2CMY;
-		case icSigCmykData:
-			return XYZ2CMYK;
-		default:
-			error("[%s]: Color space not supported",
+		case icSigXYZData:  return vcopy3;
+		case icSigLabData:  return XYZ2Lab;
+		case icSigLuvData:  return XYZ2Luv;
+		case icSigYxyData:  return XYZ2Yxy;
+		case icSigRgbData:  return XYZ2RGB;
+		case icSigGrayData: return XYZ2Gray;
+		case icSigHsvData:  return XYZ2HSV;
+		case icSigCmyData:  return XYZ2CMY;
+		case icSigCmykData: return XYZ2CMYK;
+		default: error("[%s]: Color space not supported",
 				ColorSpaceSignature2str(any));
 	}
 	
@@ -661,14 +622,14 @@ transform fromXYZ(icColorSpaceSignature any)
 /* Convert string into ICC color space signature */
 icColorSpaceSignature str2ColorSpaceSignature(char *s)
 {
-	if (!strcasecmp(s, "XYZ")) return icSigXYZData;
-	if (!strcasecmp(s, "Lab")) return icSigLabData;
-	if (!strcasecmp(s, "Luv")) return icSigLuvData;
-	if (    !strcmp(s, "Yxy")) return icSigYxyData;
-	if (!strcasecmp(s, "RGB")) return icSigRgbData;
+	if (!strcasecmp(s, "XYZ"))  return icSigXYZData;
+	if (!strcasecmp(s, "Lab"))  return icSigLabData;
+	if (!strcasecmp(s, "Luv"))  return icSigLuvData;
+	if (    !strcmp(s, "Yxy"))  return icSigYxyData;
+	if (!strcasecmp(s, "RGB"))  return icSigRgbData;
 	if (!strcasecmp(s, "GRAY")) return icSigGrayData;
-	if (!strcasecmp(s, "HSV")) return icSigHsvData;
-	if (!strcasecmp(s, "CMY")) return icSigCmyData;
+	if (!strcasecmp(s, "HSV"))  return icSigHsvData;
+	if (!strcasecmp(s, "CMY"))  return icSigCmyData;
 	if (!strcasecmp(s, "CMYK")) return icSigCmykData;
 	
 	error("[%s]: Color space not supported", s); return 0;
@@ -678,20 +639,16 @@ icColorSpaceSignature str2ColorSpaceSignature(char *s)
 int channels(icColorSpaceSignature any)
 {
 	switch (any) {
-		case icSigGrayData:
-			return 1;
+		case icSigGrayData: return 1;
 		case icSigXYZData:
 		case icSigLabData:
 		case icSigLuvData:
 		case icSigYxyData:
 		case icSigRgbData:
 		case icSigHsvData:
-		case icSigCmyData:
-			return 3;
-		case icSigCmykData:
-			return 4;
-		default:
-			error("[%s]: Color space not supported",
+		case icSigCmyData:  return 3;
+		case icSigCmykData: return 4;
+		default: error("[%s]: Color space not supported",
 				ColorSpaceSignature2str(any));
 	}
 	
