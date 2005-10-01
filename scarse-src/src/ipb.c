@@ -1,4 +1,4 @@
-/* $Id: ipb.c,v 1.17 2005/09/30 06:20:19 afrolov Exp $ */
+/* $Id: ipb.c,v 1.18 2005/10/01 02:54:34 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -73,7 +73,7 @@ char *usage_msg[] = {
 	"  -U		generate unidirectional (device -> PCS) profile only",
 	"  -E gamma	LUT shadow expansion exponent (none=1.0, default=3.0)",
 	"  -M		generate matrix based profile only, do not output LUT",
-	"  -L		ignore color correction LUT from calibration data",
+	"  -I pattern	ignore patches matching pattern; 'none' forces all to be used",
 	"",
 	" ICC profile options:",
 	"  -m manufacturer[:model] of device for which profile is created",
@@ -102,6 +102,8 @@ static double      media_black_pt[3] = {0.0, 0.0, 0.0};
 static FILE *calibration_data_stream = NULL;
 static int                invertible = 1;
 static int                ignore_lut = 0;
+static int               ignore_none = 0;
+static char          *ignore_pattern = NULL;
 static int               matrix_only = 0;
 static double   lut_shadow_expansion = 3.0;
 
@@ -444,6 +446,10 @@ void read_lut(FILE *fp)
 			data[n].var[i] = strtod(p, &q); p = q;
 		}
 		
+		/* flag points that match ignored pattern */
+		if (ignore_pattern && !fnmatch(ignore_pattern, data[n].label, 0) && !ignore_none) data[n].flag = 1;
+		
+		
 		/* push input data forward to linearized device space */
 		incurves(NULL, data[n].DEV, data[n].in);
 		
@@ -474,25 +480,31 @@ void read_lut(FILE *fp)
 	
 	/* Linear fit to calibration data */
 	if (!ignore_lut && n) {
-		int *f; double **m = matrix(9, n);
+		int *f, idx[n]; double **m = matrix(9, n);
 		
-		for (i = 0; i < n; i++) {
-			for (j = 0; j < 3; j++) m[j  ][i] = data[i].XYZ[j];
-			for (j = 0; j < 6; j++) m[j+3][i] = data[i].DEV[j];
+		for (i = 0, n = 0; i < calibration_pts; i++) if (!data[i].flag) {
+			for (j = 0; j < 3; j++) m[j  ][n] = data[i].XYZ[j];
+			for (j = 0; j < 6; j++) m[j+3][n] = data[i].DEV[j];
+			
+			idx[n++] = i;
 		}
 		
 		/* Find best-fitting linear RGB transform */
-		f = fit_matrix(m, n, M_XYZ2RGB); inv33(M_XYZ2RGB, M_RGB2XYZ);
+		if (n) { f = fit_matrix(m, n, M_XYZ2RGB); inv33(M_XYZ2RGB, M_RGB2XYZ); }
+		for (i = 0; i < n; i++) if (f[i] && !ignore_none) data[idx[i]].flag = f[i];
 		
 		/* Flag potentially clipped points */
 		for (i = 0, n = 0; i < calibration_pts; i++) {
-			if (verbose > 3) fprintf(stderr, "%c%18s: %12.10g %12.10g %12.10g -> %12.10g %12.10g %12.10g\n",
-				(f[i] ? '#' : ' '), data[i].label, m[0][i], m[1][i], m[2][i], m[3][i], m[4][i], m[5][i]);
+			if (verbose > 3) fprintf(stderr,
+				"%c%18s: %12.10g %12.10g %12.10g -> %12.10g %12.10g %12.10g\n",
+				(data[i].flag ? '#' : ' '), data[i].label,
+				data[i].DEV[0], data[i].DEV[1], data[i].DEV[2],
+				data[i].XYZ[0], data[i].XYZ[1], data[i].XYZ[2]);
 			
-			data[i].flag = f[i]; if (!f[i]) n++;
+			if (!data[i].flag) n++;
 		}
 		
-		if (verbose > 1) { fprintf(stderr, "\t%i points (%i rejected), linear fit...", calibration_pts, calibration_pts-n); fflush(stderr); }
+		if (verbose > 1) { fprintf(stderr, "\t%i points (%i ignored), linear fit...", calibration_pts, calibration_pts-n); fflush(stderr); }
 		
 		if (verbose > 2) {
 			fprintf(stderr, "\n\tXYZ -> RGB conversion matrix:\n");
@@ -1018,7 +1030,7 @@ void test_profile(char *file)
 			}
 			
 			if (verbose > 4) fprintf(stderr, "\n%20s:\tdE = %9.6f %s",
-				calibration_data[i].label, e, calibration_data[i].flag ? "(outlier, ignored)" : "");
+				calibration_data[i].label, e, calibration_data[i].flag ? "(ignored)" : "");
 		}
 		
 		if (verbose > 1) fprintf(stderr, "\n\t Forward lookup dE = (%6.4g max, %6.4g min, %6.4g avg)", dE[0], dE[1], dE[2]/n);
@@ -1077,7 +1089,7 @@ int main(int argc, char *argv[])
 	LookupPrimaries("Adobe", primaries, NULL);
 	
 	/* Parse options */
-	while ((c = getopt(argc, argv, "hv-:c:i:o:p:C:UE:MLm:d:r:b:s:")) != -1)
+	while ((c = getopt(argc, argv, "hv-:c:i:o:p:C:UE:MI:m:d:r:b:s:")) != -1)
 	switch (c) {
 	/* General options */
 		case 'h':				/* Help message */
@@ -1189,8 +1201,10 @@ int main(int argc, char *argv[])
 		case 'M':				/* Matrix profile only */
 			matrix_only = 1;
 			break;
-		case 'L':				/* Ignore LUT */
-			ignore_lut = 1;
+		case 'I':				/* Ignore LUT points */
+			if (!strcmp(optarg, "all"))  { ignore_lut = 1;  break; }
+			if (!strcmp(optarg, "none")) { ignore_none = 1; break; }
+			ignore_pattern = xstrdup(optarg);
 			break;
 	
 	/* ICC profile options */
