@@ -1,4 +1,4 @@
-/* $Id: ipb.c,v 1.18 2005/10/01 02:54:34 afrolov Exp $ */
+/* $Id: ipb.c,v 1.19 2005/10/01 03:10:16 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -113,7 +113,7 @@ static char             *description = "";
 static char               *copyright = "";
 
 static int             bitspersample = 16;
-static int               lut_size_1d = 256;
+static int               lut_size_1d = 1024;
 static int               lut_size_3d = 33;
 
 static char                 *profile = NULL;
@@ -1231,7 +1231,7 @@ int main(int argc, char *argv[])
 			if (strchr(optarg, ':'))
 				sscanf(optarg, "%i:%i", &lut_size_1d, &lut_size_3d);
 			else
-				lut_size_1d = lut_size_3d = atoi(optarg);
+				lut_size_1d = atoi(optarg);
 			
 			if (lut_size_1d < 3 || lut_size_3d < 3) usage ();
 			break;
