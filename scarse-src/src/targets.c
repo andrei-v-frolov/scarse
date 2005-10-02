@@ -1,4 +1,4 @@
-/* $Id: targets.c,v 1.8 2005/09/29 06:31:03 afrolov Exp $ */
+/* $Id: targets.c,v 1.9 2005/10/02 01:43:09 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -354,6 +354,7 @@ static ParserTransitions trans_table[] = {
 	{"PROD_DATE",		OK, OK,		parse_string, &date},
 	{"SERIAL",		OK, OK,		parse_string, &serial},
 	{"MATERIAL",		OK, OK,		parse_string, &material},
+	{"DIFFUSE_GEOMETRY",	OK, OK,		parse_string, NULL},
 	{"KEYWORD",		OK, OK,		parse_string, NULL},
 	{"NUMBER_OF_SETS",	OK, OK,		parse_int, &pts},
 	{"NUMBER_OF_FIELDS",	OK, OK,		parse_int, &fields},
