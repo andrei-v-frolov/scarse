@@ -1,4 +1,4 @@
-/* $Id: ipb.c,v 1.19 2005/10/01 03:10:16 afrolov Exp $ */
+/* $Id: ipb.c,v 1.20 2005/10/02 02:04:19 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -77,7 +77,7 @@ char *usage_msg[] = {
 	"",
 	" ICC profile options:",
 	"  -m manufacturer[:model] of device for which profile is created",
-	"  -d string	description of device profile",
+	"  -d string	description of device profile (required by Photoshop)",
 	"  -r string	copyright string of device profile",
 	"",
 	"  -b bits	LUT bits per sample (bits = 8 or 16)",
@@ -109,7 +109,7 @@ static double   lut_shadow_expansion = 3.0;
 
 static char            *manufacturer = "none";
 static char                   *model = "none";
-static char             *description = "";
+static char             *description = NULL;
 static char               *copyright = "";
 
 static int             bitspersample = 16;
@@ -738,6 +738,8 @@ void build_profile(char *file)
 		
 		if (!dt) error("add_tag failed: %d, %s", icco->errc, icco->err);
 		
+		if (!description) asprintf(&description, "SCARSE: %s", profile);
+		
 		dt->size = strlen(description)+1;	/* Allocated and used size of desc, inc null */
 		dt->allocate((icmBase *)dt);		/* Allocate space */
 		strcpy(dt->desc, description);		/* Copy the string in */
@@ -1204,7 +1206,7 @@ int main(int argc, char *argv[])
 		case 'I':				/* Ignore LUT points */
 			if (!strcmp(optarg, "all"))  { ignore_lut = 1;  break; }
 			if (!strcmp(optarg, "none")) { ignore_none = 1; break; }
-			ignore_pattern = xstrdup(optarg);
+			ignore_pattern = optarg;
 			break;
 	
 	/* ICC profile options */
