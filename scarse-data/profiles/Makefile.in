@@ -3,27 +3,37 @@
 ################################################################
 
 SHELL = /bin/sh
-
 PATH := ../../src:$(PATH)
+@SET_MAKE@
 
-PREFIX  = /usr/local
-DATADIR = $(PREFIX)/share/cms/profiles
+# Programs
+AWK	= @AWK@
+PERL	= @PERL@
+INSTALL = @INSTALL@
+INSTDAT = @INSTALL_DATA@
 
-INSTALL = install
+# Installation dirs
+prefix  	= @prefix@
+exec_prefix	= @exec_prefix@
+
+bindir  	= @bindir@
+libdir  	= @libdir@
+includedir	= @includedir@
+datadir 	= @datadir@/cms/spaces
 
 
 # Targets
 .PHONY: all clean distclean install
 
 all: profiles.pl
-	perl $^ > index.html
+	$(PERL) $^ > index.html
 
 clean:
-	rm -rf `cat FILES | awk '{print $$1;}'`
+	rm -rf `cat FILES | $(AWK) '{print $$1;}'`
 
 distclean: clean
 	rm -f FILES index.html *.tar.gz *.zip
 
 install:
-	$(INSTALL) -d $(DATADIR)
-	for i in spaces/*; do $(INSTALL) -m 0644 $$i $(DATADIR)/$${i#spaces/}; done
+	$(INSTALL) -d $(datadir)
+	for i in spaces/*; do $(INSTDAT) $$i $(datadir)/$${i#spaces/}; done

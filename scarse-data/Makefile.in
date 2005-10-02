@@ -1,21 +1,26 @@
 ################################################################
-# $Id: Makefile.in,v 1.3 2005/09/30 08:07:52 afrolov Exp $
+# $Id: Makefile.in,v 1.4 2005/10/02 13:55:25 afrolov Exp $
 # Makefile for Scarse data subdirectory
 ################################################################
 
 SHELL = /bin/sh
+@SET_MAKE@
 
-PREFIX  = /usr/local
+# Programs
+AWK	= @AWK@
+PERL	= @PERL@
+ZIP	= @ZIP@
+INSTALL = @INSTALL@
+INSTDAT = @INSTALL_DATA@
 
-BINDIR  = $(PREFIX)/bin
-LIBDIR  = $(PREFIX)/lib
-DATADIR = $(PREFIX)/share/cms
+# Installation dirs
+prefix  	= @prefix@
+exec_prefix	= @exec_prefix@
 
-
-INSTALL = install
-COMPRESS = gzip -9
-
-VERSION = $(shell cat ../VERSION)
+bindir  	= @bindir@
+libdir  	= @libdir@
+includedir	= @includedir@
+datadir 	= @datadir@/cms
 
 
 # Targets
@@ -35,26 +40,26 @@ install-profiles:
 
 install-targets:
 	echo "Installing calibration targets..."
-	$(INSTALL) -d $(DATADIR)
-	$(INSTALL) -d $(DATADIR)/targets
-	$(INSTALL) -d $(DATADIR)/targets/faust
-	$(INSTALL) -d $(DATADIR)/targets/kodak
-	$(INSTALL) -d $(DATADIR)/targets/macbeth
-	$(INSTALL) -d $(DATADIR)/targets/misc
-	$(INSTALL) -m 0644 targets/TARGETS $(DATADIR)/targets
-	for FILE in `awk '!/^(#|$$)/ {print "targets/" $$3;}' targets/TARGETS | sort | uniq`; do \
+	$(INSTALL) -d $(datadir)
+	$(INSTALL) -d $(datadir)/targets
+	$(INSTALL) -d $(datadir)/targets/faust
+	$(INSTALL) -d $(datadir)/targets/kodak
+	$(INSTALL) -d $(datadir)/targets/macbeth
+	$(INSTALL) -d $(datadir)/targets/misc
+	$(INSTDAT) targets/TARGETS $(datadir)/targets
+	for FILE in `$(AWK) '!/^(#|$$)/ {print "targets/" $$3;}' targets/TARGETS | sort | uniq`; do \
 		echo "Installing $$FILE"; \
-		$(INSTALL) -m 0644 $$FILE $(DATADIR)/$$FILE; \
-		$(COMPRESS) $(DATADIR)/$$FILE; \
+		$(INSTDAT) $$FILE $(datadir)/$$FILE; \
+		$(ZIP) $(datadir)/$$FILE; \
 	done
 
 install-etc:
 	echo "Installing configuration files..."
-	$(INSTALL) -d $(DATADIR)
-	$(INSTALL) -d $(DATADIR)/etc
+	$(INSTALL) -d $(datadir)
+	$(INSTALL) -d $(datadir)/etc
 	for FILE in etc/*; do \
 		echo "Installing $$FILE"; \
-		$(INSTALL) -m 0644 $$FILE $(DATADIR)/$$FILE; \
+		$(INSTDAT) $$FILE $(datadir)/$$FILE; \
 	done
 
 install: install-profiles install-targets install-etc

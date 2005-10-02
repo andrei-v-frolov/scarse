@@ -9,9 +9,9 @@ SHELL = /bin/sh
 .PHONY: all clean distclean install
 
 all:
-	cd icclib; make
-	cd src; make
-	cd data; make
+	cd icclib; make libicc.a
+	cd src; make all
+	cd data; make all
 
 clean:
 	cd icclib; make clean
@@ -24,6 +24,5 @@ distclean:
 	cd data; make distclean
 
 install:
-	cd icclib; make install
 	cd src; make install
 	cd data; make install

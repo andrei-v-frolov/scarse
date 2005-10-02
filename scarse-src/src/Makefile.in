@@ -1,62 +1,51 @@
 ################################################################
-# $Id: Makefile.in,v 1.7 2005/09/29 06:31:01 afrolov Exp $
+# $Id: Makefile.in,v 1.8 2005/10/02 13:55:22 afrolov Exp $
 # Makefile for Scarse source code
 ################################################################
 
 SHELL = /bin/sh
-
-PREFIX  = /usr/local
-
-BINDIR  = $(PREFIX)/bin
-LIBDIR  = $(PREFIX)/lib
-DATADIR = $(PREFIX)/share/cms
-
-
-CC	= gcc
-LD	= ld
-AR	= ar -r
-RANLIB	= ranlib
-INSTALL = install
-
-VERSION = $(shell cat ../VERSION)
-
-
+@SET_MAKE@
 
 ################################################################
 # Configuration
 ################################################################
 
-# Define if you want debugging code compiled in
-# DEBUG = 1
-
+# Programs
+CC	= @CC@
+AR	= @AR@
+RANLIB	= @RANLIB@
+INSTALL = @INSTALL@
+INSTDAT = @INSTALL_DATA@
 
 # Compiler flags
-ifdef DEBUG
-CFLAGS	= -g -pg -Wall
-DEFINES	= -DDEBUG -DVERSION='"$(VERSION) (debugging on)"' -DDATADIR='"$(DATADIR)"'
-LDFLAGS	= -pg
-else
-CFLAGS	= -O3 -march=i386 -mcpu=pentium4
-DEFINES	= -DVERSION='"$(VERSION)"' -DDATADIR='"$(DATADIR)"'
-LDFLAGS	=
-endif
-
+CFLAGS	= @CFLAGS@
 INCLUDE	= -I../icclib
-LIBS	= -L../icclib -ltiff -licc -lm
+DEFINES	= @DEFS@ -DDATADIR='"${datadir}"'
 
-ALLFLAGS = $(CFLAGS) $(DEFINES) $(INCLUDE)
+LIBS	= -L../icclib -licc @LIBS@
+LDFLAGS	= @LDFLAGS@
 
+ALLFLAGS = $(CFLAGS) $(INCLUDE) $(DEFINES)
+
+
+# Installation dirs
+prefix  	= @prefix@
+exec_prefix	= @exec_prefix@
+
+bindir  	= @bindir@
+libdir  	= @libdir@
+includedir	= @includedir@
+datadir 	= @datadir@/cms
+
+# Files
+hdrs		= $(wildcard *.h imageio/*.h)
+objs		= $(wildcard *.@OBJEXT@ imageio/*.@OBJEXT@ *.a)
+bins		= cmap ipb calibrate
 
 
 ################################################################
 # Dependencies
 ################################################################
-
-# Files
-hdrs = $(wildcard *.h imageio/*.h)
-objs = $(wildcard *.o imageio/*.o *.a)
-bins = cmap ipb calibrate
-
 
 # Targets
 .PHONY: all clean distclean install
@@ -70,8 +59,8 @@ distclean: clean
 	rm -f $(bins) gmon.out
 
 install: $(bins)
-	$(INSTALL) -d $(BINDIR)
-	$(INSTALL) -s $(bins) $(BINDIR)
+	$(INSTALL) -d $(bindir)
+	$(INSTALL) -s $(bins) $(bindir)
 
 
 # Dependencies
