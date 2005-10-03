@@ -1,4 +1,4 @@
-/* $Id: cmap.c,v 1.4 2005/09/29 06:31:01 afrolov Exp $ */
+/* $Id: cmap.c,v 1.5 2005/10/03 00:33:50 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -21,6 +21,10 @@
 
 #define SELF "cmap"
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -37,8 +41,8 @@
 /* Usage */
 char *program_name = SELF;
 char *usage_msg[] = {
-	"Translate image through ICC profiles, Version " VERSION,
-	"Author: Andrei Frolov <andrei@phys.ualberta.ca>",
+	"Translate image through ICC profiles, Version " PACKAGE_VERSION,
+	"Author: " PACKAGE_BUGREPORT,
 	"",
 	"Usage: " SELF " [options] [[-p|-r profile] ...] input.tif output.tif",
 	"",

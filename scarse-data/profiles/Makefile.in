@@ -32,7 +32,7 @@ clean:
 	rm -rf `cat FILES | $(AWK) '{print $$1;}'`
 
 distclean: clean
-	rm -f FILES index.html *.tar.gz *.zip
+	rm -f FILES index.html *.tar.gz *.zip Makefile
 
 install:
 	$(INSTALL) -d $(datadir)

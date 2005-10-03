@@ -1,4 +1,4 @@
-/* $Id: ipb.c,v 1.20 2005/10/02 02:04:19 afrolov Exp $ */
+/* $Id: ipb.c,v 1.21 2005/10/03 00:33:50 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -24,6 +24,10 @@
 
 #define SELF "ipb"
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define _GNU_SOURCE
 #include <stdlib.h>
 #include <unistd.h>
@@ -41,8 +45,8 @@
 /* Usage */
 char *program_name = SELF;
 char *usage_msg[] = {
-	"ICC profile builder, Version " VERSION,
-	"Author: Andrei Frolov <andrei@phys.ualberta.ca>",
+	"ICC profile builder, Version " PACKAGE_VERSION,
+	"Author: " PACKAGE_BUGREPORT,
 	"",
 	"Usage: " SELF " [options] profile.icm",
 	"",

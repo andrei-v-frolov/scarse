@@ -4,14 +4,15 @@ Scarse (Scanner CAlibration ReaSonably Easy)  --  to do list
 To do next:
 ===========
 
+  -- Use FreeImage library for portable image I/O
   -- Add display and printer calibration support
-  -- Write GUI frontend to calibrate (using Gtk) - any takers?
-  -- Update makefiles to use GNU Autoconf
+  -- Write GUI frontend to calibrate (using Tk/Tcl)
+  -- Implement automatic color patch grid positioning
   -- Write up documentation
 
 
-To do sometime:
-===============
+In the future:
+==============
 
   -- Make cmap and calibrate into Gimp plugins
      (this would have to wait until Gimp supports different color

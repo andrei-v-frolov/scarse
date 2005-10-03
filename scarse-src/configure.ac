@@ -1,10 +1,10 @@
-# $Id: configure.ac,v 1.1 2005/10/02 13:55:14 afrolov Exp $
+# $Id: configure.ac,v 1.2 2005/10/03 00:33:34 afrolov Exp $
 # Process this file with autoconf to produce a configure script.
 
 # Initialization
 AC_PREREQ(2.59)
 AC_INIT(SCARSE, 0.4-dev, [Andrei Frolov <afrolov@stanford.edu>])
-AC_PREFIX_DEFAULT([/var/tmp])
+#AC_PREFIX_DEFAULT([$HOME/local])
 AC_CONFIG_SRCDIR([src/ipb.c])
 AC_CONFIG_HEADER([src/config.h])
 
@@ -12,7 +12,10 @@ CFLAGS_SET=${CFLAGS+yes}
 CFLAGS_SAVE=$CFLAGS
 
 # Optional features
-AC_ARG_ENABLE(debug, [AC_HELP_STRING([--enable-debug], [Compile debugging code in])])
+AC_ARG_ENABLE(debug,
+	[AC_HELP_STRING([--enable-debug], [Compile debugging code in])],
+	AC_DEFINE(DEBUG, [], [Define if you want debugging code compiled in])
+)
 
 # Checks for programs.
 AC_PROG_CC([icc gcc cc])
@@ -21,18 +24,24 @@ AC_CHECK_PROG([AR], [ar], [ar -r])
 AC_PROG_RANLIB
 AC_PROG_AWK
 AC_CHECK_PROG([PERL], [perl], [perl])
-AC_CHECK_PROGS([ZIP], ["gzip -9" compress], [false])
+AC_CHECK_PROGS([ZIP], ["gzip -9" compress], [true])
+AC_CHECK_PROGS([UXP], ["upx --best"], [true])
 AC_PROG_INSTALL
 
 # Default flags
 CFLAGS='-O3'
-test "$CC" = "icc" && CFLAGS="$CFLAGS -ip"
-case `uname -i` in ( i?86 ) CFLAGS="$CFLAGS -march=i386 -mcpu=pentium4" ;; esac
+if test "$CC" = "icc"; then
+	CFLAGS="$CFLAGS -ipo -axPN"
+	LDFLAGS="$LDFLAGS -i-static"
+	LIBS="$LIBS -lsvml"
+fi
+case `uname -i` in ( i?86 ) CFLAGS="$CFLAGS -march=i386" ;; esac
+case `uname -p` in ( i686 ) CFLAGS="$CFLAGS -mcpu=pentium4" ;; esac
 test "$CFLAGS_SET" = "yes" && CFLAGS=$CFLAGS_SAVE
 test "$enable_debug" = "yes" && CFLAGS="$CFLAGS -g -pg -Wall"
 
 # Checks for libraries.
-AC_CHECK_LIB([m], [exp])
+AC_SEARCH_LIBS([pow], [svml m])
 AC_CHECK_LIB([tiff], [TIFFOpen])
 
 # Checks for header files.

@@ -9,7 +9,7 @@ SHELL = /bin/sh
 .PHONY: all clean distclean install
 
 all:
-	cd icclib; make libicc.a
+	cd icclib; make icc.@OBJEXT@
 	cd src; make all
 	cd data; make all
 
@@ -22,6 +22,7 @@ distclean:
 	cd icclib; make distclean
 	cd src; make distclean
 	cd data; make distclean
+	rm -f Makefile config.log config.status
 
 install:
 	cd src; make install

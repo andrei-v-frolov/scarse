@@ -1,4 +1,4 @@
-/* $Id: calibrate.c,v 1.9 2005/09/30 20:38:49 afrolov Exp $ */
+/* $Id: calibrate.c,v 1.10 2005/10/03 00:33:50 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -21,6 +21,10 @@
 
 #define SELF "calibrate"
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #define _GNU_SOURCE
 #include <stdlib.h>
 #include <unistd.h>
@@ -35,8 +39,8 @@
 /* Usage */
 char *program_name = SELF;
 char *usage_msg[] = {
-	"Input/output device calibrator, Version " VERSION,
-	"Author: Andrei Frolov <andrei@phys.ualberta.ca>",
+	"Input/output device calibrator, Version " PACKAGE_VERSION,
+	"Author: " PACKAGE_BUGREPORT,
 	"",
 	"Usage: " SELF " -d [scanner|display|printer] [...] profile.icm",
 	"For now, only scanner calibration is fully operational.",

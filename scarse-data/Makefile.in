@@ -1,5 +1,5 @@
 ################################################################
-# $Id: Makefile.in,v 1.4 2005/10/02 13:55:25 afrolov Exp $
+# $Id: Makefile.in,v 1.5 2005/10/03 00:33:39 afrolov Exp $
 # Makefile for Scarse data subdirectory
 ################################################################
 
@@ -34,6 +34,7 @@ clean:
 
 distclean:
 	cd profiles; make distclean
+	rm -f Makefile
 
 install-profiles:
 	cd profiles; make install
