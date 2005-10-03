@@ -1,4 +1,4 @@
-/* $Id: util.h,v 1.13 2005/09/29 06:31:03 afrolov Exp $ */
+/* $Id: util.h,v 1.14 2005/10/03 02:36:25 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -97,7 +97,7 @@ double lu_curve(double p[], double x);
 double lu_curve_1(double p[], double y);
 double *fit_curve(double **data, int n);
 
-int *fit_matrix(double **data, int n, double M[3][3]);
+int *fit_matrix(double **data, int n, double M[3][3], double **C);
 
 void gaussj(int n, double **A, double *B, double *X);
 

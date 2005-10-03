@@ -1,4 +1,4 @@
-/* $Id: ipb.c,v 1.21 2005/10/03 00:33:50 afrolov Exp $ */
+/* $Id: ipb.c,v 1.22 2005/10/03 02:36:25 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -161,8 +161,8 @@ typedef struct {
 	double out[MAXCHANNELS];	/* output */
 	double var[MAXCHANNELS];	/* variance */
 	/* Curve pullbacks */
-	double DEV[MAXCHANNELS*2];	/* (linearized) device */
-	double XYZ[6];			/* PCS */
+	double DEV[MAXCHANNELS];	/* (linearized) device */
+	double XYZ[3];			/* PCS */
 } datapt;
 
 static int           calibration_pts = 0;
@@ -453,25 +453,6 @@ void read_lut(FILE *fp)
 		/* flag points that match ignored pattern */
 		if (ignore_pattern && !fnmatch(ignore_pattern, data[n].label, 0) && !ignore_none) data[n].flag = 1;
 		
-		
-		/* push input data forward to linearized device space */
-		incurves(NULL, data[n].DEV, data[n].in);
-		
-		/* push input data errors forward to linearized device space */
-		{
-			double t1[ins_channels], t2[ins_channels];
-			
-			for (i = 0; i < ins_channels; i++) {
-				t1[i] = data[n].in[i] + data[n].var[i]/2.0;
-				t2[i] = data[n].in[i] - data[n].var[i]/2.0;
-			}
-			
-			incurves(NULL, t1, t1); incurves(NULL, t2, t2);
-			
-			for (i = 0; i < ins_channels; i++)
-				data[n].DEV[i+ins_channels] = LIMDEV(data[n].DEV[i], t1[i]-t2[i]);
-		}
-		
 		/* pull output data back to XYZ profile connection space */
 		outcurves_1(NULL, data[n].XYZ, data[n].out);
 		(*outs2XYZ)(data[n].XYZ, data[n].XYZ);
@@ -487,18 +468,29 @@ void read_lut(FILE *fp)
 		int *f, idx[n]; double **m = matrix(9, n);
 		
 		for (i = 0, n = 0; i < calibration_pts; i++) if (!data[i].flag) {
-			for (j = 0; j < 3; j++) m[j  ][n] = data[i].XYZ[j];
-			for (j = 0; j < 6; j++) m[j+3][n] = data[i].DEV[j];
+			for (j = 0; j < 3; j++) {
+				m[j  ][n] = data[i].XYZ[j];
+				m[j+3][n] = data[i].in[j];
+				m[j+6][n] = LIMDEV(data[i].in[j], data[i].var[j]);
+			}
 			
 			idx[n++] = i;
 		}
 		
-		/* Find best-fitting linear RGB transform */
-		if (n) { f = fit_matrix(m, n, M_XYZ2RGB); inv33(M_XYZ2RGB, M_RGB2XYZ); }
+		/* Find best-fitting linear RGB transform, while adjusting curves */
+		if (n) {
+			double *C[] = { ins_curves[0].fit, ins_curves[1].fit, ins_curves[2].fit };
+			
+			f = fit_matrix(m, n, M_XYZ2RGB, C); inv33(M_XYZ2RGB, M_RGB2XYZ);
+		}
+		
 		for (i = 0; i < n; i++) if (f[i] && !ignore_none) data[idx[i]].flag = f[i];
 		
 		/* Flag potentially clipped points */
 		for (i = 0, n = 0; i < calibration_pts; i++) {
+			/* push input data forward to linearized device space */
+			incurves(NULL, data[i].DEV, data[i].in);
+			
 			if (verbose > 3) fprintf(stderr,
 				"%c%18s: %12.10g %12.10g %12.10g -> %12.10g %12.10g %12.10g\n",
 				(data[i].flag ? '#' : ' '), data[i].label,
@@ -508,13 +500,17 @@ void read_lut(FILE *fp)
 			if (!data[i].flag) n++;
 		}
 		
-		if (verbose > 1) { fprintf(stderr, "\t%i points (%i ignored), linear fit...", calibration_pts, calibration_pts-n); fflush(stderr); }
+		if (verbose > 1) { fprintf(stderr, "\t%i points (%i ignored), matrix fit...", calibration_pts, calibration_pts-n); fflush(stderr); }
 		
 		if (verbose > 2) {
 			fprintf(stderr, "\n\tXYZ -> RGB conversion matrix:\n");
 			fprintf(stderr, "\t\t[R]   [ %13.10g %13.10g %13.10g ] [X]\n", M_XYZ2RGB[0][0], M_XYZ2RGB[0][1], M_XYZ2RGB[0][2]);
 			fprintf(stderr, "\t\t[G] = [ %13.10g %13.10g %13.10g ] [Y]\n", M_XYZ2RGB[1][0], M_XYZ2RGB[1][1], M_XYZ2RGB[1][2]);
 			fprintf(stderr, "\t\t[B]   [ %13.10g %13.10g %13.10g ] [Z]\n", M_XYZ2RGB[2][0], M_XYZ2RGB[2][1], M_XYZ2RGB[2][2]);
+			
+			fprintf(stderr, "\tAdjusted curve fits:\n");
+			for (j = 0; j < 3; j++) fprintf(stderr, "\t       y[%i] = %9.7f * x[%i]^%9.7f + %9.7f; Chi2 = %.7f\n",
+					j, ins_curves[j].fit[0], j, ins_curves[j].fit[1], ins_curves[j].fit[2], ins_curves[j].fit[3]);
 		}
 		
 		/* Plot linear lookup table fit scatter using gnuplot */

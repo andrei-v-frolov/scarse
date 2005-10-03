@@ -1,4 +1,4 @@
-/* $Id: fit.c,v 1.13 2005/09/29 06:31:02 afrolov Exp $ */
+/* $Id: fit.c,v 1.14 2005/10/03 02:36:25 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -223,7 +223,7 @@ static double _lut_lim_[2];
 /* LUT model is linear fit with possible clipping */
 static double lut_model(double p[], double X, double Y, double Z)
 {
-	register double x = p[0]*X + p[1]*Y + p[2]*Z;
+	register double t = p[0]*X + p[1]*Y + p[2]*Z, x = ppow(t, p[3]) + p[4];
 	
 	if (x < _lut_lim_[0]) x = _lut_lim_[0];
 	if (x > _lut_lim_[1]) x = _lut_lim_[1];
@@ -245,16 +245,16 @@ static double lut_chi2(double p[])
 }
 
 /* Fit linear model RGB=M*XYZ to the data */
-int *fit_matrix(double **data, int n, double M[3][3])
+int *fit_matrix(double **data, int n, double M[3][3], double **C)
 {
-	#define D 3
+	#define D 5
 	int i, j, k, *f = ivector(n);
 	double *p = vector(D+1), **e = matrix(D,D);
 	
 	for (i = 0; i < n; i++) f[i] = 0;
 	
 	for (k = 0; k < 3; k++) {
-		double min = 1.0, max = 0.0, *x = data[k+3];
+		double s, min = 1.0, max = 0.0, *x = data[k+3];
 		
 		/* data limits */
 		for (i = 0; i < n; i++) {
@@ -272,7 +272,7 @@ int *fit_matrix(double **data, int n, double M[3][3])
 		_lut_lim_[0] = min;
 		_lut_lim_[1] = max;
 		
-		p[0] = p[1] = p[2] = 0.0; p[k] = 1.0;
+		p[0] = p[1] = p[2] = 0.0; p[k] = 1.0; p[3] = C[k][1]; p[4] = C[k][2];
 		
 		/* initialize direction set */
 		for (i = 0; i < D; i++) { for (j = 0; j < D; j++) e[i][j] = 0.0; e[i][i] = 1.0; }
@@ -282,14 +282,17 @@ int *fit_matrix(double **data, int n, double M[3][3])
 		
 		/* potential outliers */
 		for (i = 0; i < n; i++) {
-			double y = p[0]*data[0][i] + p[1]*data[1][i] + p[2]*data[2][i];
+			double t = p[0]*data[0][i] + p[1]*data[1][i] + p[2]*data[2][i], y = ppow(t, p[3]) + p[4];
 			
 			if (y < min - 3.0*data[k+6][i]) f[i] = 1;
 			if (y > max + 3.0*data[k+6][i]) f[i] = 1;
 		}
 		
-		/* store the result */
-		for (i = 0; i < 3; i++) M[k][i] = p[i];
+		/* pass the result to caller */
+		s = p[0]*XYZ_ILLUM[0] + p[1]*XYZ_ILLUM[1] + p[2]*XYZ_ILLUM[2];
+		
+		for (i = 0; i < 3; i++) M[k][i] = p[i]/s;
+		C[k][0] = pow(s, p[3]); C[k][1] = p[3]; C[k][2] = p[4]; C[k][3] = p[5];
 	}
 	
 	free_matrix(e);
