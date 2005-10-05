@@ -1,4 +1,4 @@
-/* $Id: ipb.c,v 1.22 2005/10/03 02:36:25 afrolov Exp $ */
+/* $Id: ipb.c,v 1.23 2005/10/05 06:29:25 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -22,21 +22,8 @@
  *   - Do something about gamut boundaries and tables...
  */
 
-#define SELF "ipb"
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#define _GNU_SOURCE
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
-
-#include <icc.h>
 #include "scarse.h"
+#define SELF "ipb"
 
 
 

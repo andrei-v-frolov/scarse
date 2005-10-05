@@ -1,4 +1,4 @@
-/* $Id: util.c,v 1.3 2005/09/24 01:20:45 afrolov Exp $ */
+/* $Id: util.c,v 1.4 2005/10/05 06:29:26 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -11,17 +11,7 @@
  * 
  */
 
-#define _GNU_SOURCE
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdarg.h>
-#include <fnmatch.h>
-#include <math.h>
-
-#include "util.h"
+#include "scarse.h"
 
 
 

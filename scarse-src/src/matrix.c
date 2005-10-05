@@ -1,4 +1,4 @@
-/* $Id: matrix.c,v 1.4 2005/09/29 06:31:02 afrolov Exp $ */
+/* $Id: matrix.c,v 1.5 2005/10/05 06:29:26 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -11,7 +11,7 @@
  * 
  */
 
-#include "util.h"
+#include "scarse.h"
 
 
 /* copy vector: B = A */

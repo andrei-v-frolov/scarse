@@ -1,4 +1,4 @@
-/* $Id: calibrate.c,v 1.10 2005/10/03 00:33:50 afrolov Exp $ */
+/* $Id: calibrate.c,v 1.11 2005/10/05 06:29:25 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -19,18 +19,8 @@
  *
  */
 
-#define SELF "calibrate"
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#define _GNU_SOURCE
-#include <stdlib.h>
-#include <unistd.h>
-#include <stdio.h>
-
 #include "scarse.h"
+#define SELF "calibrate"
 
 
 

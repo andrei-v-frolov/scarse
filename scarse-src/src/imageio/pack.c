@@ -1,4 +1,4 @@
-/* $Id: pack.c,v 1.2 2005/09/28 01:18:42 afrolov Exp $ */
+/* $Id: pack.c,v 1.3 2005/10/05 06:29:32 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -11,12 +11,7 @@
  * 
  */
 
-#include <stdlib.h>
-#include <math.h>
-#include <icc.h>
-
-#include "../util.h"
-#include "imageio.h"
+#include "../scarse.h"
 
 
 /******************* Clipping and quantizing **************************/

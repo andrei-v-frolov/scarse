@@ -1,4 +1,4 @@
-/* $Id: targets.c,v 1.9 2005/10/02 01:43:09 afrolov Exp $ */
+/* $Id: targets.c,v 1.10 2005/10/05 06:29:26 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -11,17 +11,8 @@
  * 
  */
 
-#define _GNU_SOURCE
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <ctype.h>
-#include <fnmatch.h>
-#include <math.h>
-
-#include <icc.h>
 #include "scarse.h"
+
 
 
 /****************** Target file indexing ******************************/
@@ -374,7 +365,7 @@ static ParserTransitions trans_table[] = {
 	{"LAYOUT_TABLE",	LAYOUT, LAYOUT,	parse_layout, &layout},
 	{"GRAYSCALE_STEPS",	LAYOUT, LAYOUT,	parse_int, &graypts},
 	{"GRAYSCALE",		LAYOUT, LAYOUT,	parse_scale, &grayscale},
-	NULL
+	{NULL,			UNDEF,	UNDEF,	NULL, NULL}
 };
 
 

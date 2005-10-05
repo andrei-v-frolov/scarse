@@ -1,4 +1,4 @@
-# $Id: configure.ac,v 1.2 2005/10/03 00:33:34 afrolov Exp $
+# $Id: configure.ac,v 1.3 2005/10/05 06:29:16 afrolov Exp $
 # Process this file with autoconf to produce a configure script.
 
 # Initialization
@@ -30,15 +30,22 @@ AC_PROG_INSTALL
 
 # Default flags
 CFLAGS='-O3'
+
 if test "$CC" = "icc"; then
 	CFLAGS="$CFLAGS -ipo -axPN"
 	LDFLAGS="$LDFLAGS -i-static"
 	LIBS="$LIBS -lsvml"
 fi
+
 case `uname -i` in ( i?86 ) CFLAGS="$CFLAGS -march=i386" ;; esac
 case `uname -p` in ( i686 ) CFLAGS="$CFLAGS -mcpu=pentium4" ;; esac
+
+if test "$enable_debug" = "yes"; then
+	CFLAGS="$CFLAGS -g -pg -Wall"
+	LDFLAGS="$LDFLAGS -g -pg"
+fi
+
 test "$CFLAGS_SET" = "yes" && CFLAGS=$CFLAGS_SAVE
-test "$enable_debug" = "yes" && CFLAGS="$CFLAGS -g -pg -Wall"
 
 # Checks for libraries.
 AC_SEARCH_LIBS([pow], [svml m])
@@ -61,6 +68,7 @@ AC_CHECK_LIB([tiff], [TIFFOpen])
 #AC_FUNC_VPRINTF
 #AC_REPLACE_FNMATCH
 #AC_CHECK_FUNCS([floor pow sqrt erf getline getdelim memset strcasecmp strchr strdup strstr])
+AC_CHECK_FUNCS([erf])
 
 AC_CONFIG_FILES([Makefile src/Makefile icclib/Makefile data/Makefile data/profiles/Makefile])
 AC_OUTPUT

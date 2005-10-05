@@ -1,4 +1,4 @@
-/* $Id: imageio.c,v 1.1 2001/01/26 22:45:32 frolov Exp $ */
+/* $Id: imageio.c,v 1.2 2005/10/05 06:29:31 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -15,11 +15,7 @@
  *   TIFF code based on libtiff & tools by Sam Leffler
  */
 
-#define _GNU_SOURCE
-
-#include <fnmatch.h>
-#include "imageio.h"
-#include "../util.h"
+#include "../scarse.h"
 
 
 /**********************************************************************/

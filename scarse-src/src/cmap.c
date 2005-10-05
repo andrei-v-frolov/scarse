@@ -1,4 +1,4 @@
-/* $Id: cmap.c,v 1.5 2005/10/03 00:33:50 afrolov Exp $ */
+/* $Id: cmap.c,v 1.6 2005/10/05 06:29:25 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -19,20 +19,8 @@
  *
  */
 
-#define SELF "cmap"
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
-
-#include <icc.h>
 #include "scarse.h"
+#define SELF "cmap"
 
 
 

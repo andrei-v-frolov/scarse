@@ -1,4 +1,4 @@
-/* $Id: tiff.c,v 1.1 2001/01/26 22:45:32 frolov Exp $ */
+/* $Id: tiff.c,v 1.2 2005/10/05 06:29:32 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -19,12 +19,7 @@
  *
  */
 
-#include <stdlib.h>
-#include <stdarg.h>
-#include <icc.h>
-
-#include "../util.h"
-#include "imageio.h"
+#include "../scarse.h"
 
 
 /* Private data for TIFF image wrappers */

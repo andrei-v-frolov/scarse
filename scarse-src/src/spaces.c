@@ -1,4 +1,4 @@
-/* $Id: spaces.c,v 1.10 2005/10/01 01:18:40 afrolov Exp $ */
+/* $Id: spaces.c,v 1.11 2005/10/05 06:29:26 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -34,12 +34,7 @@
  *
  */
 
-#include <string.h>
-#include <math.h>
-#include <icc.h>
-
-#include "spaces.h"
-#include "util.h"
+#include "scarse.h"
 
 
 

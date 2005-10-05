@@ -1,4 +1,4 @@
-/* $Id: ppm.c,v 1.1 2001/01/26 22:45:32 frolov Exp $ */
+/* $Id: ppm.c,v 1.2 2005/10/05 06:29:32 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -20,14 +20,7 @@
  *   Write access would be nice for completeness...
  */
 
-#define _GNU_SOURCE
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <icc.h>
-
-#include "imageio.h"
-#include "../util.h"
+#include "../scarse.h"
 
 
 /* Private data for PPM image wrappers */

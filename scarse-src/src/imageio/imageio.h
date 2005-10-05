@@ -1,4 +1,4 @@
-/* $Id: imageio.h,v 1.1 2001/01/26 22:45:32 frolov Exp $ */
+/* $Id: imageio.h,v 1.2 2005/10/05 06:29:32 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -10,10 +10,6 @@
  * Maintainer: Andrei Frolov <andrei@phys.ualberta.ca>
  * 
  */
-
-#include <stdio.h>
-#include <tiffio.h>
-
 
 /**********************************************************************/
 
