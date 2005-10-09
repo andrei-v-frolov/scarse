@@ -1,4 +1,4 @@
-/* $Id: scarse.h,v 1.7 2005/10/05 06:29:26 afrolov Exp $ */
+/* $Id: scarse.h,v 1.8 2005/10/09 04:15:46 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -24,23 +24,40 @@
 
 /* standard headers */
 #define _GNU_SOURCE
+
+#ifdef STDC_HEADERS
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <math.h>
+#endif
 
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#include <stdarg.h>
+#endif
+
+/* replacement headers */
+#ifndef HAVE_ASPRINTF
+#include <snprintf.h>
+#endif
+
+#ifndef HAVE_GETLINE
+#include <getline.h>
+#endif
+
 #include <fnmatch.h>
 
-/* required libraries */
+/* color stuff */
 #include <icc.h>
-#include <tiffio.h>
-
-/* our own headers */
 #include "spaces.h"
+
+/* image i/o */
+#ifdef HAVE_LIBTIFF
+#include <tiffio.h>
 #include "imageio/imageio.h"
+#endif
 
 
 /**********************************************************************/

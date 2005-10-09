@@ -9,7 +9,6 @@ SHELL = /bin/sh
 .PHONY: all clean distclean install
 
 all:
-	cd icclib; make icc.@OBJEXT@
 	cd src; make all
 	cd data; make all
 

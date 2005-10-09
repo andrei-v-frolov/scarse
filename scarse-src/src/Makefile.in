@@ -1,5 +1,5 @@
 ################################################################
-# $Id: Makefile.in,v 1.9 2005/10/03 00:33:50 afrolov Exp $
+# $Id: Makefile.in,v 1.10 2005/10/09 04:15:46 afrolov Exp $
 # Makefile for Scarse source code
 ################################################################
 
@@ -20,7 +20,7 @@ INSTDAT = @INSTALL_DATA@
 
 # Compiler flags
 CFLAGS	= @CFLAGS@
-INCLUDE	= -I../icclib
+INCLUDE	= -I. -I../lib -I../icclib
 DEFINES	= @DEFS@ -DDATADIR='"${datadir}"'
 
 LIBS	= @LIBS@
@@ -40,9 +40,10 @@ datadir 	= @datadir@/cms
 
 # Files
 hdrs		= $(wildcard *.h imageio/*.h)
-objs		= $(wildcard *.@OBJEXT@ imageio/*.@OBJEXT@ *.a)
-icclib		= ../icclib/icc.@OBJEXT@
+objs		= $(wildcard *.@OBJEXT@ imageio/*.@OBJEXT@ ../lib/*.@OBJEXT@)
 imageio		= $(addprefix imageio/, $(addsuffix .@OBJEXT@, pack tiff ppm imageio))
+libobjs		= $(addprefix ../lib/, @LIBOBJS@)
+libicc		= ../icclib/icc.@OBJEXT@
 bins		= cmap ipb calibrate
 
 
@@ -59,7 +60,7 @@ clean:
 	rm -f $(objs)
 
 distclean: clean
-	rm -f $(bins) gmon.out config.h Makefile
+	rm -f $(bins) gmon.out Makefile config.h $(addsuffix .h, $(basename $(wildcard ../lib/*.hin)))
 
 install: $(bins)
 	$(INSTALL) -d $(bindir)
@@ -68,11 +69,11 @@ install: $(bins)
 
 
 # Dependencies
-cmap: cmap.o $(imageio) util.o $(icclib)
+cmap: cmap.o $(imageio) util.o $(libicc) $(libobjs)
 
-ipb: ipb.o fit.o spaces.o matrix.o util.o $(icclib)
+ipb: ipb.o fit.o spaces.o matrix.o util.o $(libicc) $(libobjs)
 
-calibrate: calibrate.o targets.o $(imageio) spaces.o matrix.o util.o $(icclib)
+calibrate: calibrate.o targets.o $(imageio) spaces.o matrix.o util.o $(libicc) $(libobjs)
 
 
 

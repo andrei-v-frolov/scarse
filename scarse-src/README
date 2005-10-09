@@ -121,6 +121,7 @@ Included in this distribution are:
 	configure	- automatic configuration script
 	
 	icclib/		- icclib & examples by Graeme W. Gill
+	lib/		- portability library (mostly GNU code)
 	data/		- calibration target data and so on
 	src/		- scarse source code, including
 	  ipb		    ICC profile builder

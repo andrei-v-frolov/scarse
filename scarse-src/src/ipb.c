@@ -1,4 +1,4 @@
-/* $Id: ipb.c,v 1.23 2005/10/05 06:29:25 afrolov Exp $ */
+/* $Id: ipb.c,v 1.24 2005/10/09 04:15:46 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -1051,7 +1051,7 @@ void test_profile(char *file)
 			}
 			
 			if (verbose > 4) fprintf(stderr, "\n%20s:\tdE = %9.6f %s",
-				calibration_data[i].label, e, calibration_data[i].flag ? "(outlier, ignored)" : "");
+				calibration_data[i].label, e, calibration_data[i].flag ? "(ignored)" : "");
 		}
 		
 		if (verbose > 1) fprintf(stderr, "\n\tBackward lookup dE = (%6.4g max, %6.4g min, %6.4g avg)\n", dE[0], dE[1], dE[2]/n);
