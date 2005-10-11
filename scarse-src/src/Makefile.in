@@ -1,5 +1,5 @@
 ################################################################
-# $Id: Makefile.in,v 1.10 2005/10/09 04:15:46 afrolov Exp $
+# $Id: Makefile.in,v 1.11 2005/10/11 02:41:26 afrolov Exp $
 # Makefile for Scarse source code
 ################################################################
 
@@ -21,7 +21,7 @@ INSTDAT = @INSTALL_DATA@
 # Compiler flags
 CFLAGS	= @CFLAGS@
 INCLUDE	= -I. -I../lib -I../icclib
-DEFINES	= @DEFS@ -DDATADIR='"${datadir}"'
+DEFINES	= @DEFS@ -DSCARSE_DATADIR='"${datadir}"'
 
 LIBS	= @LIBS@
 LDFLAGS	= @LDFLAGS@

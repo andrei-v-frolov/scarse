@@ -1,4 +1,4 @@
-/* $Id: util.c,v 1.4 2005/10/05 06:29:26 afrolov Exp $ */
+/* $Id: util.c,v 1.5 2005/10/11 02:41:26 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -126,7 +126,7 @@ FILE *xfetch(const char *prefix, const char *file, const char *mode)
 {
 	int i;
 	FILE *fp = strcmp(file, "-") ? zfopen(file, mode) : stdin;
-	char *t, *path[] = { ".", getenv("CMS_DATADIR"), "~/.scarse", DATADIR, "/usr/share/cms" };
+	char *t, *path[] = { ".", getenv("CMS_DATADIR"), "~/.scarse", SCARSE_DATADIR, "/usr/share/cms" };
 	
 	if (*mode != 'r' || strchr(mode, '+'))
 		error("Internal error: use xfetch() for input only");

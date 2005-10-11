@@ -1,4 +1,4 @@
-/* $Id: scarse.h,v 1.8 2005/10/09 04:15:46 afrolov Exp $ */
+/* $Id: scarse.h,v 1.9 2005/10/11 02:41:26 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -49,15 +49,16 @@
 
 #include <fnmatch.h>
 
-/* color stuff */
-#include <icc.h>
-#include "spaces.h"
-
-/* image i/o */
+/* external libraries */
 #ifdef HAVE_LIBTIFF
 #include <tiffio.h>
-#include "imageio/imageio.h"
 #endif
+
+#include <icc.h>
+
+/* our own headers */
+#include "spaces.h"
+#include "imageio/imageio.h"
 
 
 /**********************************************************************/
