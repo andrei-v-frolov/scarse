@@ -1,4 +1,4 @@
-/* $Id: fit.c,v 1.15 2005/10/05 06:29:25 afrolov Exp $ */
+/* $Id: fit.c,v 1.16 2005/10/12 23:17:42 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -433,46 +433,50 @@ static void powers(double x[], double F[])
 {
 	#define ORDER 4
 	
+	/* x^0 */
+	F[ 0] = 1.0;
+	#define D 1
+	
 	/* x^1 */
 	#if ORDER>0
-	F[ 0] = x[0];
-	F[ 1] = x[1];
-	F[ 2] = x[2];
-	#define D 3
+	#undef D
+	F[ 1] = x[0];
+	F[ 2] = x[1];
+	F[ 3] = x[2];
+	#define D 4
 	#endif
 	
 	/* x^2 */
 	#if ORDER>1
 	#undef D
-	F[ 3] = x[0]*F[0];
 	F[ 4] = x[0]*F[1];
 	F[ 5] = x[0]*F[2];
-	F[ 6] = x[1]*F[1];
+	F[ 6] = x[0]*F[3];
 	F[ 7] = x[1]*F[2];
-	F[ 8] = x[2]*F[2];
-	#define D 9
+	F[ 8] = x[1]*F[3];
+	F[ 9] = x[2]*F[3];
+	#define D 10
 	#endif
 	
 	/* x^3 */
 	#if ORDER>2
 	#undef D
-	F[ 9] = x[0]*F[3];
 	F[10] = x[0]*F[4];
 	F[11] = x[0]*F[5];
 	F[12] = x[0]*F[6];
 	F[13] = x[0]*F[7];
 	F[14] = x[0]*F[8];
-	F[15] = x[1]*F[6];
+	F[15] = x[0]*F[9];
 	F[16] = x[1]*F[7];
 	F[17] = x[1]*F[8];
-	F[18] = x[2]*F[8];
-	#define D 19
+	F[18] = x[1]*F[9];
+	F[19] = x[2]*F[9];
+	#define D 20
 	#endif
 	
 	/* x^4 */
 	#if ORDER>3
 	#undef D
-	F[19] = x[0]*F[ 9];
 	F[20] = x[0]*F[10];
 	F[21] = x[0]*F[11];
 	F[22] = x[0]*F[12];
@@ -482,18 +486,18 @@ static void powers(double x[], double F[])
 	F[26] = x[0]*F[16];
 	F[27] = x[0]*F[17];
 	F[28] = x[0]*F[18];
-	F[29] = x[1]*F[15];
+	F[29] = x[0]*F[19];
 	F[30] = x[1]*F[16];
 	F[31] = x[1]*F[17];
 	F[32] = x[1]*F[18];
-	F[33] = x[2]*F[18];
-	#define D 34
+	F[33] = x[1]*F[19];
+	F[34] = x[2]*F[19];
+	#define D 35
 	#endif
 	
 	/* x^5 */
 	#if ORDER>4
 	#undef D
-	F[34] = x[0]*F[19];
 	F[35] = x[0]*F[20];
 	F[36] = x[0]*F[21];
 	F[37] = x[0]*F[22];
@@ -508,13 +512,14 @@ static void powers(double x[], double F[])
 	F[46] = x[0]*F[31];
 	F[47] = x[0]*F[32];
 	F[48] = x[0]*F[33];
-	F[49] = x[1]*F[29];
+	F[49] = x[0]*F[34];
 	F[50] = x[1]*F[30];
 	F[51] = x[1]*F[31];
 	F[52] = x[1]*F[32];
 	F[53] = x[1]*F[33];
-	F[54] = x[2]*F[33];
-	#define D 55
+	F[54] = x[1]*F[34];
+	F[55] = x[2]*F[34];
+	#define D 56
 	#endif
 	
 	#undef ORDER
