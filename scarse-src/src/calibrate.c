@@ -1,4 +1,4 @@
-/* $Id: calibrate.c,v 1.11 2005/10/05 06:29:25 afrolov Exp $ */
+/* $Id: calibrate.c,v 1.12 2005/10/13 05:00:40 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -94,15 +94,15 @@ static void scanner_correction(FILE *fp, target *tg)
 	fprintf(fp, "BLACKPOINT: %12.10g %12.10g %12.10g;\n\n", Dmax[0], Dmax[1], Dmax[2]);
 	
 	
-	/* media white point (Dmin) is mapped to standard illuminant as per ICC specs */
-	/* media black point (Dmin) is shifted to neutral black (keeping the same density) */
+	/* media white point (Dmin) is mapped to reference media white (89% of D50) */
+	/* media black point (Dmax) is shifted to reference media black (0.3% of D50) */
 	#define scale33(M, A, B, C) { double T[3] = { A[0]-B[0], A[1]-B[1], A[2]-B[2] }; apply33(M, T, C); }
 	
 	for (j = 0; j < 3; j++) {
-		double beta = Dmax[1]/Dmin[1];
+		double alpha = RMAX, beta = RMIN;
 		
-		WPT[j] = (Dmin[j] - Dmax[j])/(1.0 - beta);
-		BPT[j] = (Dmax[j] - beta*Dmin[j])/(1.0 - beta);
+		WPT[j] = (Dmin[j] - Dmax[j])/(alpha - beta);
+		BPT[j] = (alpha*Dmax[j] - beta*Dmin[j])/(alpha - beta);
 	}
 	
 	XYZ_CAT(WPT, XYZ_ILLUM, WPT_CAT);

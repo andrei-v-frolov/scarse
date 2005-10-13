@@ -1,4 +1,4 @@
-/* $Id: spaces.h,v 1.8 2005/09/30 20:38:49 afrolov Exp $ */
+/* $Id: spaces.h,v 1.9 2005/10/13 05:00:40 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -20,6 +20,10 @@
 #define MAXCHANNELS 4		/* Compile-time default; change to suit */
 #define BLEND_GAMMA 2.2		/* Compile-time default; change to suit */
 
+
+/* reference media levels */
+#define RMIN 3.0911e-3		/* D=2.4593 as per ICC.1:2004-10 */
+#define RMAX 89.000e-2		/* 89% neutral as per ICC.1:2004-10 */
 
 /* Lab conversion constants */
 #define ALPHA 116.0

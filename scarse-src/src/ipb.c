@@ -1,4 +1,4 @@
-/* $Id: ipb.c,v 1.24 2005/10/09 04:15:46 afrolov Exp $ */
+/* $Id: ipb.c,v 1.25 2005/10/13 05:00:40 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -168,13 +168,22 @@ static double                   **T1 = NULL, Q1[3][3];
 
 /******************* Transform functions ******************************/
 
+/* Soft clip transfer function */
+static double sclip(double x, double min, double max)
+{
+	if (x < min) { return min*min/(2.0*min - x); }
+	if (x > max) { return (x - max*max)/(x - 2.0*max + 1.0); }
+	
+	return x;
+}
+
 /* Translate data through curves */
 void xlate_curve(double in[], double out[], int channels, curve c[])
 {
 	int i;
 	
 	for (i = 0; i < channels; i++)
-		out[i] = lu_curve(c[i].fit, in[i]);
+		out[i] = sclip(lu_curve(c[i].fit, in[i]), RMIN, RMAX);
 }
 
 /* Translate data through reverse curves */
@@ -268,6 +277,10 @@ void ctransform(void *cntx, double out[], double in[])
 		XYZ[0] += t[0]; XYZ[1] += t[1]; XYZ[2] += t[2];
 	}
 	
+	XYZ[0] = sclip(XYZ[0], RMIN*XYZ_ILLUM[0], RMAX*XYZ_ILLUM[0]);
+	XYZ[1] = sclip(XYZ[1], RMIN*XYZ_ILLUM[1], RMAX*XYZ_ILLUM[1]);
+	XYZ[2] = sclip(XYZ[2], RMIN*XYZ_ILLUM[2], RMAX*XYZ_ILLUM[2]);
+	
 	(*XYZ2outs)(XYZ, out);
 }
 
@@ -288,6 +301,10 @@ void ctransform_1(void *cntx, double out[], double in[])
 		XYZ2Lab(XYZ, Lab); interp3d(T1, PTS, Q1, Lab, t);
 		XYZ[0] += t[0]; XYZ[1] += t[1]; XYZ[2] += t[2];
 	}
+	
+	XYZ[0] = sclip(XYZ[0], RMIN*XYZ_ILLUM[0], RMAX*XYZ_ILLUM[0]);
+	XYZ[1] = sclip(XYZ[1], RMIN*XYZ_ILLUM[1], RMAX*XYZ_ILLUM[1]);
+	XYZ[2] = sclip(XYZ[2], RMIN*XYZ_ILLUM[2], RMAX*XYZ_ILLUM[2]);
 	
 	(*XYZ2ins)(XYZ, out);
 }
@@ -671,16 +688,6 @@ void read_calibration_data(FILE *fp)
 
 /******************* Profile builder **********************************/
 
-/* Clip value to specified range */
-static double clip(double v, double min, double max, int *clipped)
-{
-	if (v < min) { *clipped |= 0x01; return min; }
-	if (v > max) { *clipped |= 0x01; return max; }
-	
-	return v;
-}
-
-
 /* Create a matrix or LUT-based profile */
 void build_profile(char *file)
 {
@@ -806,7 +813,7 @@ void build_profile(char *file)
 	
 	/* Red, Green and Blue Tone Reproduction Curve Tags: */
 	{
-		int i, rv = 0; double p[MAXCHANNELS];
+		int i; double p[MAXCHANNELS];
 		
 		icmCurve *r = (icmCurve *)icco->add_tag(
 				icco, icSigRedTRCTag, icSigCurveType);
@@ -831,13 +838,11 @@ void build_profile(char *file)
 				p[0] = p[1] = p[2] = i/(lut_size_1d-1.0);
 				
 				incurves(NULL, p, p);	/* Transfer function */
-				r->data[i] = clip(p[0], 0.0, 1.0, &rv);
-				g->data[i] = clip(p[1], 0.0, 1.0, &rv);
-				b->data[i] = clip(p[2], 0.0, 1.0, &rv);
+				
+				r->data[i] = p[0];
+				g->data[i] = p[1];
+				b->data[i] = p[2];
 			}
-			
-			if (verbose > 1 && rv)
-				warning("%s: warning: RGB curves were clipped", file);
 		} else if (ins_gamma != 1.0) { /* power law */
 			r->flag = g->flag = b->flag = icmCurveGamma;
 			

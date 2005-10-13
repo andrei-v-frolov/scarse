@@ -3,22 +3,24 @@ Scarse (Scanner CAlibration ReaSonably Easy)  --  change log
 
 Version 0.4-alpha
   ** new release in a while - major internal changes
-  ** move to relative colorimetry completed:
-      - chromatic adaptation transform code implemented
-      - media black point shifted to neutral keeping the same density
-      - media white point mapped to D50 illuminant using Bradford CAT
+  ** move to relative colorimetry completed (as per ICC.1:2004-10):
+      - chromatic adaptation transforms implemented (default is Bradford)
+      - media white point mapped to neutral reflectance of 89% D50
+      - media black point shifted to reference neutral (0.3% D50)
       - XYZ<->RGB transforms of standard spaces identical to Photoshop
   ** ipb profile generation algorithm completely rewritten:
       - robust non-linear curve model fit replaces interpolation
       - robust linear matrix fit and outlier detection implemented
       - polynomial regression wrt Lab error metric removes trends
       - residual is interpolated by completely regularized splines
-  ** average profile error is well within 1.0dE now (typically 0.1dE)
+      - soft clipping of below-black and brighter-than-white levels
+  ** average profile error is well within 1.0dE now (typically 0.2dE)
   ** generated profiles are drop-in compatible with Photoshop/Adobe ACE
   ** ICC linear/gamma curve tags generated for smaller profile size
   ** standard profile library generator added to the distribution
   ** switched to GNU Autoconf for build configuration (finally!)
-  ** optimized builds (using icc and gcc) or debugging version available
+      - optimized builds (using icc and gcc) or debugging version available
+      - compiles on Windows under MSYS/MinGW environment
   ** various code clean-ups and bug fixes (including infamous 0.3 patches)
 
 Version 0.3-alpha
