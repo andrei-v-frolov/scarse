@@ -1,4 +1,4 @@
-/* $Id: fit.c,v 1.16 2005/10/12 23:17:42 afrolov Exp $ */
+/* $Id: fit.c,v 1.17 2005/10/14 22:31:54 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -545,10 +545,10 @@ double **fit_poly(double **x, int n)
 static double crspl3(double r2)
 {
 #ifdef HAVE_ERF
-	if (r2 > 0.0) { double x = sqrt(50.0*r2); return erf(x/2.0)/x; }
+	if (r2 > 0.0) { double x = sqrt(100.0*r2); return erf(x/2.0)/x; }
 	else return 0.56418958354775628694807945156; /* 1.0/sqrt(M_PI) */
 #else
-	double x2 = 50.0*r2, t2 = (0.151643219517124+(0.3164499679425996E-2)*x2)*x2;
+	double x2 = 100.0*r2, t2 = (0.151643219517124+(0.3164499679425996E-2)*x2)*x2;
 	return 1.0/sqrt(M_PI*exp(-t2) + x2);
 #endif
 }
@@ -578,6 +578,9 @@ void prepint3d(double **m, int n, double Q[3][3])
 			
 			A[i][j] = crspl3(qform33(Q, t, t));
 		}
+		
+		/* regularization */
+		for (i = 0; i < n; i++) A[i][i] += 5.6419e-3;
 		
 		/* find coefficients */
 		gaussj(n, A, m[3+k], m[3+k]);
