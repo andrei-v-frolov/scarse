@@ -1,4 +1,4 @@
-/* $Id: cmap.c,v 1.6 2005/10/05 06:29:25 afrolov Exp $ */
+/* $Id: cmap.c,v 1.7 2005/10/19 07:10:27 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -151,7 +151,7 @@ static iccProfile *add_profile_to_pipe(const char *name, icc *icco, iccProfile *
 	/* Open ICC profile */
 	if (!icco) {
 		int rv = 0;
-		FILE *file = xfopen(name, "rb");
+		FILE *file = xfetch("profiles", name, "rb");
 		
 		p->icco = new_icc();
 		if (!p->icco) error("Creation of ICC object failed");

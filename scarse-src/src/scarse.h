@@ -1,4 +1,4 @@
-/* $Id: scarse.h,v 1.9 2005/10/11 02:41:26 afrolov Exp $ */
+/* $Id: scarse.h,v 1.10 2005/10/19 07:10:27 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -38,6 +38,10 @@
 #include <unistd.h>
 #endif
 
+#ifdef HAVE_WINDOWS_H
+#include <windows.h>
+#endif
+
 /* replacement headers */
 #ifndef HAVE_ASPRINTF
 #include <snprintf.h>
@@ -50,7 +54,7 @@
 #include <fnmatch.h>
 
 /* external libraries */
-#ifdef HAVE_LIBTIFF
+#ifdef HAVE_TIFFIO_H
 #include <tiffio.h>
 #endif
 

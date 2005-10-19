@@ -1,4 +1,4 @@
-# $Id: configure.ac,v 1.5 2005/10/17 06:34:02 afrolov Exp $
+# $Id: configure.ac,v 1.6 2005/10/19 07:10:10 afrolov Exp $
 # Process this file with autoconf to produce a configure script.
 
 # Initialization
@@ -14,7 +14,7 @@ CFLAGS_SAVE=$CFLAGS
 
 # Optional features
 AC_ARG_ENABLE(debug,
-	[AC_HELP_STRING([--enable-debug], [Compile debugging code in])],
+	[AC_HELP_STRING([--enable-debug], [compile debugging code in])],
 	AC_DEFINE(DEBUG, [], [Define if you want debugging code compiled in])
 )
 
@@ -53,8 +53,7 @@ if test "$CC" = "icc"; then
 	LIBS="$LIBS -lsvml"
 fi
 
-case `uname -i` in ( i?86 ) CFLAGS="$CFLAGS -march=i386" ;; esac
-case `uname -p` in ( i686 ) CFLAGS="$CFLAGS -mcpu=pentium4" ;; esac
+case `uname -m` in ( i?86 ) CFLAGS="$CFLAGS -march=i386 -mcpu=pentium4" ;; esac
 
 if test "$enable_debug" = "yes"; then
 	CFLAGS="$CFLAGS -g -pg -Wall"
@@ -68,12 +67,13 @@ test "x$LIBTIFF_INC" = "x" || CPPFLAGS="$CPPFLAGS -I$LIBTIFF_INC"
 test "x$LIBTIFF_LIB" = "x" || LDFLAGS="$LDFLAGS -L$LIBTIFF_LIB"
 
 # Checks for libraries.
-AC_SEARCH_LIBS([pow], [svml m])
+AC_SEARCH_LIBS([pow], [m])
 AC_HAVE_LIBRARY([tiff],, [AC_MSG_ERROR([Can't find tiff libraries, giving up...])])
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADER([tiffio.h],, [AC_MSG_ERROR([Can't find tiff headers, giving up...])])
+AC_CHECK_HEADERS([tiffio.h],, [AC_MSG_ERROR([Can't find tiff headers, giving up...])])
+AC_CHECK_HEADERS([windows.h], [AC_LIBOBJ(w32reg)])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_SIZE_T

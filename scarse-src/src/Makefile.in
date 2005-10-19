@@ -1,5 +1,5 @@
 ################################################################
-# $Id: Makefile.in,v 1.11 2005/10/11 02:41:26 afrolov Exp $
+# $Id: Makefile.in,v 1.12 2005/10/19 07:10:27 afrolov Exp $
 # Makefile for Scarse source code
 ################################################################
 
@@ -36,7 +36,7 @@ exec_prefix	= @exec_prefix@
 bindir  	= @bindir@
 libdir  	= @libdir@
 includedir	= @includedir@
-datadir 	= @datadir@/cms
+datadir 	= @datadir@/scarse
 
 # Files
 hdrs		= $(wildcard *.h imageio/*.h)

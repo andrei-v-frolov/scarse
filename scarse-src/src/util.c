@@ -1,4 +1,4 @@
-/* $Id: util.c,v 1.5 2005/10/11 02:41:26 afrolov Exp $ */
+/* $Id: util.c,v 1.6 2005/10/19 07:10:27 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -124,9 +124,18 @@ FILE *xfopen(const char *file, const char *mode)
 /* find & open file for input */
 FILE *xfetch(const char *prefix, const char *file, const char *mode)
 {
-	int i;
-	FILE *fp = strcmp(file, "-") ? zfopen(file, mode) : stdin;
-	char *t, *path[] = { ".", getenv("CMS_DATADIR"), "~/.scarse", SCARSE_DATADIR, "/usr/share/cms" };
+	int i; char *t; FILE *fp = strcmp(file, "-") ? zfopen(file, mode) : stdin;
+	
+	/* file search path */
+	char *path[] = {
+		".", "~/.scarse",		/* user directories */
+		getenv("SCARSE_DATA"),		/* environment variable*/
+		#ifdef HAVE_WINDOWS_H		/* Windows registry key */
+		read_w32_registry_string(NULL, "SOFTWARE\\GNU\\SCARSE", "HomeDir"),
+		#endif
+		SCARSE_DATADIR,			/* compile time default */
+		"/usr/share/scarse"		/* fallback */
+	};
 	
 	if (*mode != 'r' || strchr(mode, '+'))
 		error("Internal error: use xfetch() for input only");

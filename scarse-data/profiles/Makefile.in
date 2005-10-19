@@ -19,7 +19,7 @@ exec_prefix	= @exec_prefix@
 bindir  	= @bindir@
 libdir  	= @libdir@
 includedir	= @includedir@
-datadir 	= @datadir@/cms/spaces
+datadir 	= @datadir@/scarse/profiles
 
 
 # Targets

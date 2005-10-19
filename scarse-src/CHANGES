@@ -14,13 +14,14 @@ Version 0.4-alpha
       - polynomial regression wrt Lab error metric removes trends
       - residual is interpolated by completely regularized splines
       - soft clipping of below-black and brighter-than-white levels
-  ** average profile error is well within 1.0dE now (typically 0.2dE)
+  ** average profile error is LUT-size limited now (typically < 1.0dE)
   ** generated profiles are drop-in compatible with Photoshop/Adobe ACE
   ** ICC linear/gamma curve tags generated for smaller profile size
   ** standard profile library generator added to the distribution
   ** switched to GNU Autoconf for build configuration (finally!)
       - optimized builds (using icc and gcc) or debugging version available
       - compiles on Windows under MSYS/MinGW environment
+  ** IT8.7 data files collection updated and split into a separate package
   ** various code clean-ups and bug fixes (including infamous 0.3 patches)
 
 Version 0.3-alpha

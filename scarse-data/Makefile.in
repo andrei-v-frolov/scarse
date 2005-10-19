@@ -1,5 +1,5 @@
 ################################################################
-# $Id: Makefile.in,v 1.5 2005/10/03 00:33:39 afrolov Exp $
+# $Id: Makefile.in,v 1.6 2005/10/19 07:10:14 afrolov Exp $
 # Makefile for Scarse data subdirectory
 ################################################################
 
@@ -20,7 +20,7 @@ exec_prefix	= @exec_prefix@
 bindir  	= @bindir@
 libdir  	= @libdir@
 includedir	= @includedir@
-datadir 	= @datadir@/cms
+datadir 	= @datadir@/scarse
 
 
 # Targets
@@ -45,7 +45,7 @@ install-targets:
 	$(INSTALL) -d $(datadir)/targets
 	$(INSTALL) -d $(datadir)/targets/faust
 	$(INSTALL) -d $(datadir)/targets/kodak
-	$(INSTALL) -d $(datadir)/targets/macbeth
+	$(INSTALL) -d $(datadir)/targets/kodak/{E1,E3,K3,R1,R2}-Data
 	$(INSTALL) -d $(datadir)/targets/misc
 	$(INSTDAT) targets/TARGETS $(datadir)/targets
 	for FILE in `$(AWK) '!/^(#|$$)/ {print "targets/" $$3;}' targets/TARGETS | sort | uniq`; do \
@@ -58,7 +58,7 @@ install-etc:
 	echo "Installing configuration files..."
 	$(INSTALL) -d $(datadir)
 	$(INSTALL) -d $(datadir)/etc
-	for FILE in etc/*; do \
+	for FILE in etc/*.options; do \
 		echo "Installing $$FILE"; \
 		$(INSTDAT) $$FILE $(datadir)/$$FILE; \
 	done
