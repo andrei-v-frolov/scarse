@@ -1,4 +1,4 @@
-/* $Id: util.c,v 1.6 2005/10/19 07:10:27 afrolov Exp $ */
+/* $Id: util.c,v 1.7 2005/10/20 02:11:01 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -100,14 +100,12 @@ FILE *zfopen(const char *file, const char *mode)
 	if (fnmatch("*.{gz,Z}", file, 0) && fp) return fp;
 	
 	/* failed; try adding suffixes */
-	f = xstrdup(file);
-	if (!fp) { free(f); asprintf(&f, "%s.gz", file); fp = fopen(f, mode); }
-	if (!fp) { free(f); asprintf(&f, "%s.Z", file); fp = fopen(f, mode); }
+	if (!fp) { asprintf(&f, "%s.bz2", file); if (fp = fopen(f, mode)) asprintf(&p, "bzcat %s", f); free(f); }
+	if (!fp) { asprintf(&f, "%s.gz",  file); if (fp = fopen(f, mode)) asprintf(&p,  "zcat %s", f); free(f); }
+	if (!fp) { asprintf(&f, "%s.Z",   file); if (fp = fopen(f, mode)) asprintf(&p,  "zcat %s", f); free(f); }
 	
 	/* reopen as compressed input stream */
-	if (fp) { fclose(fp); asprintf(&p, "zcat %s", f); fp = popen(p, mode); free(p); }
-	
-	free(f);
+	if (fp) { fclose(fp); fp = popen(p, mode); free(p); }
 	
 	return fp;
 }

@@ -1,4 +1,4 @@
-# $Id: configure.ac,v 1.6 2005/10/19 07:10:10 afrolov Exp $
+# $Id: configure.ac,v 1.7 2005/10/20 02:10:56 afrolov Exp $
 # Process this file with autoconf to produce a configure script.
 
 # Initialization
@@ -40,7 +40,7 @@ AC_CHECK_PROG([AR], [ar], [ar -r])
 AC_PROG_RANLIB
 AC_PROG_AWK
 AC_CHECK_PROG([PERL], [perl], [perl])
-AC_CHECK_PROGS([ZIP], ["gzip -9" compress], [true])
+AC_CHECK_PROGS([ZIP], ["bzip2 -9" "gzip -9" compress], [true])
 AC_CHECK_PROGS([UXP], ["upx --best"], [true])
 AC_PROG_INSTALL
 
