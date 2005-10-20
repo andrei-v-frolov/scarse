@@ -1,4 +1,4 @@
-/* $Id: targets.c,v 1.10 2005/10/05 06:29:26 afrolov Exp $ */
+/* $Id: targets.c,v 1.11 2005/10/20 05:48:32 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -17,15 +17,33 @@
 
 /****************** Target file indexing ******************************/
 
+/* Check string uniqueness */
+static int uniq(char *s, char ***u, int *n, int *l)
+{
+	int i;
+	
+	/* check pointer sanity */
+	if (!u || !n || !l) return -1;
+	
+	/* check string uniqueness */
+	for (i = 0; i < *n; i++) if (!strcmp(s, (*u)[i])) return 0;
+	
+	/* allocate and grow buffer if neccessary */
+	if (!(*u)) { *u = (char **)xmalloc((*l = 16)*sizeof(char *)); }
+	if (*n >= *l) { *u = (char **)xrealloc((void *)(*u), (*l <<= 1)*sizeof(char *)); }
+	
+	/* string is unique, store for future reference */
+	(*u)[(*n)++] = xstrdup(s); return 1;
+}
+
 /* List target types and batches found in the target index */
 void list_targets(char *type)
 {
-	char *t, *b, *f;
+	int n = 0, l = 0;
+	char *t, *b, *f, **u = NULL;
 	size_t bsize = 128;
 	char *buffer = (char *)xmalloc(bsize);
-	FILE *fp = xfetch("targets", "TARGETS", "r"), *out = popen("sort | uniq", "w");
-	
-	if (!out) error("Could not run sort on target list");
+	FILE *fp = xfetch("targets", "TARGETS", "r");
 	
 	while (getline(&buffer, &bsize, fp) != -1) {
 		/* skip over comments and empty lines */
@@ -37,20 +55,17 @@ void list_targets(char *type)
 		
 		if (type) {
 			/* list all target batches for a given type */
-			if (!strcmp(t, type) && !strchr(b, '*')) fprintf(out, "%s\n", b);
+			if (!strcmp(t, type) && !strchr(b, '*') && uniq(b, &u, &n, &l)) printf("%s\n", b);
 		} else {
 			/* list all available target types */
-			if (!strchr(t, '*') && !strchr(b, '*')) fprintf(out, "%s\n", t);
+			if (!strchr(t, '*') && !strchr(b, '*') && uniq(t, &u, &n, &l)) printf("%s\n", t);
 		}
 		
-		free(t);
-		free(b);
-		free(f);
+		free(t); free(b); free(f);
 	}
 	
-	free(buffer);
-	pclose(out);
-	fclose(fp);
+	/* clean up */
+	fclose(fp); free(buffer); while (n) free(u[--n]); free(u);
 }
 
 /* Find target data and layout files in the target index */
