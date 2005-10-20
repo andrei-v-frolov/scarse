@@ -1,13 +1,13 @@
-/* $Id: targets.c,v 1.11 2005/10/20 05:48:32 afrolov Exp $ */
+/* $Id: targets.c,v 1.12 2005/10/20 06:14:59 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
  * IT8.7 calibration target data handling routines.
  * 
- * Copyright (C) 2000 Scarse Project
+ * Copyright (C) 2000-2005 Scarse Project
  * Distributed under the terms of GNU Public License.
  * 
- * Maintainer: Andrei Frolov <andrei@phys.ualberta.ca>
+ * Maintainer: Andrei Frolov <frolov@cita.utoronto.ca>
  * 
  */
 

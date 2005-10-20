@@ -1,9 +1,9 @@
-# $Id: configure.ac,v 1.7 2005/10/20 02:10:56 afrolov Exp $
+# $Id: configure.ac,v 1.8 2005/10/20 06:14:18 afrolov Exp $
 # Process this file with autoconf to produce a configure script.
 
 # Initialization
 AC_PREREQ(2.59)
-AC_INIT(SCARSE, 0.4-alpha, [Andrei Frolov <afrolov@stanford.edu>])
+AC_INIT(SCARSE, 0.4-alpha, [Andrei Frolov <frolov@cita.utoronto.ca>])
 #AC_PREFIX_DEFAULT([$HOME/local])
 AC_CONFIG_LIBOBJ_DIR([lib])
 AC_CONFIG_SRCDIR([src/ipb.c])

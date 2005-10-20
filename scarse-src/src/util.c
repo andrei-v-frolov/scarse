@@ -1,13 +1,13 @@
-/* $Id: util.c,v 1.7 2005/10/20 02:11:01 afrolov Exp $ */
+/* $Id: util.c,v 1.8 2005/10/20 06:15:00 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
  * Error handlers, vectors and matrices, other misc stuff.
  * 
- * Copyright (C) 1999 Scarse Project
+ * Copyright (C) 1999-2005 Scarse Project
  * Distributed under the terms of GNU Public License.
  * 
- * Maintainer: Andrei Frolov <andrei@phys.ualberta.ca>
+ * Maintainer: Andrei Frolov <frolov@cita.utoronto.ca>
  * 
  */
 

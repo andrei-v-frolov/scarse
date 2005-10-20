@@ -1,13 +1,13 @@
-/* $Id: fit.c,v 1.17 2005/10/14 22:31:54 afrolov Exp $ */
+/* $Id: fit.c,v 1.18 2005/10/20 06:14:58 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
  * Data fitting and approximation routines.
  * 
- * Copyright (C) 2000 Scarse Project
+ * Copyright (C) 2000-2005 Scarse Project
  * Distributed under the terms of GNU Public License.
  * 
- * Maintainer: Andrei Frolov <andrei@phys.ualberta.ca>
+ * Maintainer: Andrei Frolov <frolov@cita.utoronto.ca>
  * 
  */
 

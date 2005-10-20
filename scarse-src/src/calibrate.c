@@ -1,13 +1,13 @@
-/* $Id: calibrate.c,v 1.13 2005/10/20 05:01:36 afrolov Exp $ */
+/* $Id: calibrate.c,v 1.14 2005/10/20 06:14:57 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
  * Collect and prepare data for device calibration.
  * 
- * Copyright (C) 1999 Scarse Project
+ * Copyright (C) 1999-2005 Scarse Project
  * Distributed under the terms of GNU Public License.
  * 
- * Maintainer: Andrei Frolov <andrei@phys.ualberta.ca>
+ * Maintainer: Andrei Frolov <frolov@cita.utoronto.ca>
  * 
  */
 

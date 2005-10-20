@@ -1,13 +1,13 @@
-/* $Id: cmap.c,v 1.7 2005/10/19 07:10:27 afrolov Exp $ */
+/* $Id: cmap.c,v 1.8 2005/10/20 06:14:57 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
  * Translate image through ICC profiles.
  * 
- * Copyright (C) 1999, 2000 Scarse Project
+ * Copyright (C) 1999-2005 Scarse Project
  * Distributed under the terms of GNU Public License.
  * 
- * Maintainer: Andrei Frolov <andrei@phys.ualberta.ca>
+ * Maintainer: Andrei Frolov <frolov@cita.utoronto.ca>
  * 
  */
 

@@ -1,4 +1,4 @@
-/* $Id: spaces.c,v 1.11 2005/10/05 06:29:26 afrolov Exp $ */
+/* $Id: spaces.c,v 1.12 2005/10/20 06:14:59 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -7,7 +7,7 @@
  * Copyright (C) 1999-2005 Scarse Project
  * Distributed under the terms of GNU Public License.
  * 
- * Maintainer: Andrei Frolov <afrolov@stanford.edu>
+ * Maintainer: Andrei Frolov <frolov@cita.utoronto.ca>
  * 
  */
 

@@ -1,4 +1,4 @@
-/* $Id: ipb.c,v 1.25 2005/10/13 05:00:40 afrolov Exp $ */
+/* $Id: ipb.c,v 1.26 2005/10/20 06:14:58 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -7,7 +7,7 @@
  * Copyright (C) 1999-2005 Scarse Project
  * Distributed under the terms of GNU Public License.
  * 
- * Maintainer: Andrei Frolov <andrei@phys.ualberta.ca>
+ * Maintainer: Andrei Frolov <frolov@cita.utoronto.ca>
  * 
  */
 

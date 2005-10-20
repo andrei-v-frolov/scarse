@@ -1,13 +1,13 @@
-/* $Id: imageio.h,v 1.2 2005/10/05 06:29:32 afrolov Exp $ */
+/* $Id: imageio.h,v 1.3 2005/10/20 06:15:04 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
  * Public declarations for image IO wrapper library.
  * 
- * Copyright (C) 1999 Scarse Project
+ * Copyright (C) 1999-2005 Scarse Project
  * Distributed under the terms of GNU Public License.
  * 
- * Maintainer: Andrei Frolov <andrei@phys.ualberta.ca>
+ * Maintainer: Andrei Frolov <frolov@cita.utoronto.ca>
  * 
  */
 

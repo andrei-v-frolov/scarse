@@ -1,13 +1,13 @@
-/* $Id: matrix.c,v 1.5 2005/10/05 06:29:26 afrolov Exp $ */
+/* $Id: matrix.c,v 1.6 2005/10/20 06:14:58 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
  * Matrix and vector operations with 3x3 matrices.
  * 
- * Copyright (C) 1999 Scarse Project
+ * Copyright (C) 1999-2005 Scarse Project
  * Distributed under the terms of GNU Public License.
  * 
- * Maintainer: Andrei Frolov <andrei@phys.ualberta.ca>
+ * Maintainer: Andrei Frolov <frolov@cita.utoronto.ca>
  * 
  */
 
