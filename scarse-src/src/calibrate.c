@@ -1,4 +1,4 @@
-/* $Id: calibrate.c,v 1.12 2005/10/13 05:00:40 afrolov Exp $ */
+/* $Id: calibrate.c,v 1.13 2005/10/20 05:01:36 afrolov Exp $ */
 
 /*
  * Scanner Calibration Reasonably Easy (scarse)
@@ -86,14 +86,6 @@ static void scanner_correction(FILE *fp, target *tg)
 	static char *channel[] = {"red", "green", "blue"};
 	
 	
-	/* Profile info */
-	fprintf(fp, "PROFILE: input RGB -> XYZ;\n\n");
-	
-	/* Media white & black points */
-	fprintf(fp, "WHITEPOINT: %12.10g %12.10g %12.10g;\n", Dmin[0], Dmin[1], Dmin[2]);
-	fprintf(fp, "BLACKPOINT: %12.10g %12.10g %12.10g;\n\n", Dmax[0], Dmax[1], Dmax[2]);
-	
-	
 	/* media white point (Dmin) is mapped to reference media white (89% of D50) */
 	/* media black point (Dmax) is shifted to reference media black (0.3% of D50) */
 	#define scale33(M, A, B, C) { double T[3] = { A[0]-B[0], A[1]-B[1], A[2]-B[2] }; apply33(M, T, C); }
@@ -107,6 +99,13 @@ static void scanner_correction(FILE *fp, target *tg)
 	
 	XYZ_CAT(WPT, XYZ_ILLUM, WPT_CAT);
 	
+	
+	/* Profile info */
+	fprintf(fp, "PROFILE: input RGB -> XYZ;\n\n");
+	
+	/* Media white & black points */
+	fprintf(fp, "WHITEPOINT: %12.10g %12.10g %12.10g;\n", WPT[0]+BPT[0], WPT[1]+BPT[1], WPT[2]+BPT[2]);
+	fprintf(fp, "BLACKPOINT: %12.10g %12.10g %12.10g;\n\n", BPT[0], BPT[1], BPT[2]);
 	
 	/* Curves */
 	for (j = 0; j < 3; j++) {
