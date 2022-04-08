@@ -1,0 +1,28 @@
+################################################################
+# Top level Makefile
+################################################################
+
+SHELL = /bin/sh
+
+
+# Targets
+.PHONY: all clean distclean install
+
+all:
+	cd src; make all
+	cd data; make all
+
+clean:
+	cd icclib; make clean
+	cd src; make clean
+	cd data; make clean
+
+distclean:
+	cd icclib; make distclean
+	cd src; make distclean
+	cd data; make distclean
+	rm -f Makefile config.log config.status
+
+install:
+	cd src; make install
+	cd data; make install

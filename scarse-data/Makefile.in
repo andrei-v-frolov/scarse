@@ -1,0 +1,66 @@
+################################################################
+# $Id: Makefile.in,v 1.6 2005/10/19 07:10:14 afrolov Exp $
+# Makefile for Scarse data subdirectory
+################################################################
+
+SHELL = /bin/sh
+@SET_MAKE@
+
+# Programs
+AWK	= @AWK@
+PERL	= @PERL@
+ZIP	= @ZIP@
+INSTALL = @INSTALL@
+INSTDAT = @INSTALL_DATA@
+
+# Installation dirs
+prefix  	= @prefix@
+exec_prefix	= @exec_prefix@
+
+bindir  	= @bindir@
+libdir  	= @libdir@
+includedir	= @includedir@
+datadir 	= @datadir@/scarse
+
+
+# Targets
+.PHONY: all clean distclean install-profiles install-targets install-etc install
+
+all:
+	cd profiles; make all
+
+clean:
+	cd profiles; make clean
+
+distclean:
+	cd profiles; make distclean
+	rm -f Makefile
+
+install-profiles:
+	cd profiles; make install
+
+install-targets:
+	echo "Installing calibration targets..."
+	$(INSTALL) -d $(datadir)
+	$(INSTALL) -d $(datadir)/targets
+	$(INSTALL) -d $(datadir)/targets/faust
+	$(INSTALL) -d $(datadir)/targets/kodak
+	$(INSTALL) -d $(datadir)/targets/kodak/{E1,E3,K3,R1,R2}-Data
+	$(INSTALL) -d $(datadir)/targets/misc
+	$(INSTDAT) targets/TARGETS $(datadir)/targets
+	for FILE in `$(AWK) '!/^(#|$$)/ {print "targets/" $$3;}' targets/TARGETS | sort | uniq`; do \
+		echo "Installing $$FILE"; \
+		$(INSTDAT) $$FILE $(datadir)/$$FILE; \
+		$(ZIP) $(datadir)/$$FILE; \
+	done
+
+install-etc:
+	echo "Installing configuration files..."
+	$(INSTALL) -d $(datadir)
+	$(INSTALL) -d $(datadir)/etc
+	for FILE in etc/*.options; do \
+		echo "Installing $$FILE"; \
+		$(INSTDAT) $$FILE $(datadir)/$$FILE; \
+	done
+
+install: install-profiles install-targets install-etc

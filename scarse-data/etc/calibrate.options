@@ -1,0 +1,17 @@
+# $Id: calibrate.options,v 1.1 2000/08/09 02:18:47 andrei Exp $
+# 
+# Option macros (long options) definitions  --  calibrate
+# 
+# Option macros are defined one per line; entry format is
+#   <pattern>   <options it expands into...>
+# All entries with pattern matching long option name are expanded and
+# pushed to the right of current position in command line in sequence
+# in which they are encountered.
+# 
+# Users can add their own definitions without recompiling binaries.
+# 
+
+# GNU-style aliases for general options
+help		-h
+version		-h
+debug		-vvvvv -D

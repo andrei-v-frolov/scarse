@@ -1,0 +1,248 @@
+Scarse (Scanner CAlibration ReaSonably Easy)  --  readme
+========================================================
+
+What is it?
+===========
+
+Scarse is a free color calibration and management software package. It
+lets you build and use ICC profiles. Custom profiles can be generated
+from variety of calibration targets. Scarse is intended for (and
+developed on) Unix machines and is distributed under the terms of GNU
+Public License (see file COPYING).
+
+Scarse project was born out of my desire to be able to get good scans
+which are consistent across large batches, and do it with minimal
+amount of manual tweaking. It is intended for serious photographic or
+prepress applications, and is most useful with high-end film scanners.
+If you just want to occasionally scan a snapshot of your aunt on your
+$100 flatbed and don't care about the colors as long as they are
+snappy, don't bother, this package is not for you.
+
+As the name implies, color management issues are rarely addressed in
+the free software world, probably because until now good scanner
+hardware was unaffordable to a mere mortal. With all professional
+graphic solutions being firmly locked into Mac or Windows platforms,
+there was hardly anything at all for Unix. However, time marches on,
+desktop scanners and printers got much better and cheaper, some brave
+people wrote Gimp, and a color management system for Unix was needed.
+So I set out to write it...
+
+Right now, the Scarse is in early development stages, and is not as
+polished as commercial systems are. Indeed, it is quite rough and even
+downright inconvenient in places. However, it is quite functional
+already, and produces transparency scans which are superior to what I
+get from OEM Polaroid SprintScan 4000 profiles (using the same
+hardware). So if you are adventurous type, give it a try, and tell me
+what you think...
+
+
+What is it not?
+===============
+
+Scarse isn't any of the following:
+
+  * Scanner or printer driver:
+      Scarse knows nothing about your scanner and printer hardware. It
+      relies on external drivers to do actual scanning and printing. If
+      you are looking for scanner drivers, you want SANE.
+  * Image manipulation program:
+      Scarse does not do anything to the image itself. It just
+      manipulates colors so they appear correct on your hardware. If
+      you want to retouch photos or apply unsharp masks and such, you
+      need Gimp.
+  * ICC engine:
+      Scarse isn't an ICC engine per se. It builds on top of icclib,
+      which is an ICC engine. Scarse is a color management system,
+      which means it allows you to generate custom profiles for your
+      hardware setup, as well as use them.
+  * Fast:
+      Maximum possible speed was never a design goal. The precision of
+      color translation is the priority. Scarse uses doubles for color
+      representation internally, which gives you full 52 bits/channel,
+      as opposed to only 8 or 16 bits/channel in packed integer
+      representation you typically see. This eliminates discretization
+      errors, but makes it run slower (still, it is not a slug :).
+
+
+How does it work?
+=================
+
+It works quite well, thank you :). Oh, you meant technical details :)? 
+
+Scarse works by comparing the scan of a hardcopy reference calibration
+target (such as IT8.7 or Kodak Q60) coming from your hardware to the
+actual colors the target is supposed to have. It then builds (by
+approximation and interpolation) lookup tables that take into account
+the measured scanner hardware peculiarities. Using thus generated
+profile, you can then get scans with color rendition (more or less :)
+independent of the particular hardware used. 
+
+You will need a supported hardcopy calibration target. Standard IT8.7
+targets are made by most major film manufacturers for the purpose of
+calibrating scanners for their films. They offer a lot of color points
+to measure and thus produce quite precise profiles. Q60 target is
+available from Kodak in 35mm and 4x5 transparency, as well as 5x7
+reflective formats. Wolf Faust makes 5x7 reflective IT8.7 targets on
+Fuji paper, which he sells quite cheaply. Other standard calibration
+targets, such as MacBeth Color Checker and Kodak Color Separation Guide
+Q13 & Q14 (grayscale only), are also supported.
+
+You cannot calibrate scanner for negative film the same way you can do
+it with slides, because of the variations in negatives on per-exposure
+basis. Scarse provides automatic color adjustment which will normalize
+scan of a negative to roughly correct levels and contrast, and you can
+work from there. Printing negatives is more of a subjective thing, and
+some decisions are better left to a human.
+
+
+Where do I find it?
+===================
+
+The latest release and development news can be found at Scarse homepage
+
+	http://www.scarse.org/
+
+You can contact the author (that's me :) directly by email
+
+	Andrei Frolov <frolov@cita.utoronto.ca>
+
+
+What's included?
+================
+
+Included in this distribution are:
+	
+	CHANGES		- change log
+	COPYING		- GNU Public License
+	CREDITS		- people who contributed to development
+	INSTALL		- installation notes
+	README		- this file
+	TODO		- to do list
+	configure	- automatic configuration script
+	
+	icclib/		- icclib & examples by Graeme W. Gill
+	lib/		- portability library (mostly GNU code)
+	data/		- calibration target data and so on
+	src/		- scarse source code, including
+	  ipb		    ICC profile builder
+	  calibrate	    input/output device calibration utility
+	  cmap		    utility to translate image through ICC profiles
+
+
+How do I compile/install/use it?
+================================
+
+Read installation notes in file INSTALL - in brief, say
+
+	./configure && make && make install
+
+in the top directory. This will make and install scarse binaries, along
+with target data and standard RGB profiles. By default, icclib is
+compiled in directly as an object, both for performance and portability
+reasons. If you have Intel C compiler installed, configure will use it
+with aggressive optimization options, as this produces significantly
+faster floating point code than gcc (at the expense of increased binary
+size). If you have upx, the binaries will be packed upon installation.
+
+As for using it, I have not written proper documentation and man pages
+yet, so you are on your own :). Tutorial on color calibration could not
+hurt either, as there is a lot of confusion around the issue. But for
+now, I'll assume that you know what you are doing, and are not afraid
+of reading source code :). So I'll just give a few examples of what you
+can do with this package. Note that all tools will print the summary of
+their usage and options if invoked with '-h' flag.
+
+To generate scanner profile:
+
+    Scan calibration target (Kodak Q60) at full bit width hardware
+    support, and save it as TIFF file. Open it up in viewer and find
+    the position of the target corners (those white/black crosslines
+    around the target grid) and write it down as X geometry
+    specification in percent of the total image size. You can also
+    just crop the image to the target corners, and skip the geometry
+    specification. (If you are unclear on what I mean, see example at
+    Scarse home page.) This step is important, as calibration utility
+    must align grid with all those colored squares, or else it will
+    produce bogus colors. Then say something like
+
+        calibrate -v -d scanner -tQ60E3 -b1998:08 -g 90x80+5+10 -i file.tif scanner.icm
+    
+    If it complains about 'fluctuations too big', either your scan is
+    really noisy, or the grid was misaligned. Check the geometry
+    specification again if unsure.
+
+To generate display profile:
+
+    Proper display calibration is not supported yet (and would require
+    some kind of photometer, anyway). However, you can easily generate
+    generic power-law profiles by saying something like
+    
+        ipb -v -c display -iRGB:2.5 -p Trinitron -p D50 -M display.icm
+    
+    The trick is to get gamma and RGB primaries right. Typical gamma
+    for PC monitor is 2.5, for Mac it is 1.8. Scarse supports all the
+    primaries Photoshop knows about (and you can specify your own too),
+    but you will have to choose the ones you want yourself :).
+
+Display vs. working space:
+
+    RGB spaces based on monitor primaries have somewhat limited color
+    gamut. If you intend to go to press, or want to make an archival
+    copy of your photos, you may want to work in a different color
+    space. Lab has the largest gamut, but is currently not supported by
+    Gimp at all. Wide Gamut RGB or Adobe RGB could be viable choices.
+    In any case, corresponding profiles can be generated by choosing
+    appropriate primaries with -p option to ipb:
+
+        ipb -v -c display -p Adobe -M Adobe.icm
+
+To generate generic profile:
+
+    ICC profile builder, ipb, can build profiles connecting various
+    color spaces, generic or tailored to fit some set of measured data.
+    For example, to generate generic XYZ to Lab transform, say
+
+   	ipb -v -c abstract -iXYZ -oLab XYZ2Lab.icm
+
+To use the profiles you generated:
+
+    Use cmap to translate image through a series of profiles, and store
+    the result as TIFF image. You can also control how image is stored,
+    check cmap options for more details. Typical use for scans of
+    positive media (transparency or reflective) would be
+
+        cmap -v -p scanner.icm -r display.icm raw.tif calibrated.tif
+
+Handling negative scans:
+
+    You cannot calibrate scanner for negative film the same way you can
+    do it with slides, because of the huge variations in negatives on
+    per-exposure basis. To work around this, automatic color adjustment
+    algorithm has been encorporated into cmap. You use it like this
+    
+        cmap -v -ALg raw.tif corrected.tif
+    
+    The automatic correction brings the image in the rough ballpark,
+    and you can further manually correct levels and curves - see cmap
+    help. Some films (notably 4-layer emulsions like Fuji NPS) seem to
+    like more aggessive per-channel automatic correction given by -ALG.
+
+
+What if I find a bug?
+=====================
+
+What do you mean, a bug? It's a feature! :) Seriously though, as this
+is first alpha, and not tested to any significant extent, expect bugs.
+Lots of them. If you find one, please send bug report to me (my email
+is at the bottom of this page), including description what went wrong
+and what were you doing at the time. Better yet, fix it yourself and
+send me a patch :). I also want to hear improvement suggestions and
+(constructive) critique.
+
+And if you want to contribute to this project, please do!
+
+
+
+Well, that's all for now...
+
+-- Andrei Frolov <frolov@cita.utoronto.ca>

@@ -1,0 +1,243 @@
+<!-- $Id: index.html,v 1.14 2005/10/27 01:14:06 afrolov Exp $ -->
+<HTML><HEAD><TITLE>Scarse Project Homepage</TITLE></HEAD>
+
+<META NAME="description" CONTENT="open source color calibration and
+management software for high-end photographic and prepress needs">
+
+<META NAME="keywords" CONTENT="CMS, color management, ICC profiles,
+digital darkroom, scanner calibration, photography, film, slide">
+
+<BODY BGCOLOR=white TEXT=black>
+
+<TABLE WIDTH=100%>
+  <TR>
+  <TD ALIGN=left><A HREF="http://www.sourceforge.net/"><IMG SRC="http://sourceforge.net/sflogo.php?group_id=7892&type=1" ALT="SourceForge"></A></TD>
+  <TD ALIGN=left><A HREF="http://sourceforge.net/donate/index.php?group_id=7892"><IMG SRC="http://images.sourceforge.net/images/project-support.jpg" WIDTH="88" HEIGHT="32" BORDER="0" ALT="Support Scarse Project" /></A></TD>
+  <TD ALIGN=right>[
+    <A HREF="http://sourceforge.net/projects/scarse/">Project status</A> |
+    <A HREF="http://sourceforge.net/bugs/?group_id=7892">Bugs</A> |
+    <A HREF="http://sourceforge.net/patch/?group_id=7892">Patches</A> |
+    <A HREF="http://lists.sourceforge.net/mailman/listinfo/scarse-announce">Mailing list</A> |
+    <A HREF="http://sourceforge.net/project/showfiles.php?group_id=7892">Downloads</A> |
+    <A HREF="links.html">Links</A>
+  ]</TD></TR>
+</TABLE>
+
+
+<H1 ALIGN=center>
+<FONT SIZE=8>SCARSE:</FONT><BR>
+Scanner CAlibration ReaSonably Easy</H1>
+
+<P><HR>
+<H3>Call for developers/testers!</H3>
+
+<IMG SRC="atwork.gif" ALIGN=left HSPACE=16 ALT="">
+
+Scarse project is currently <EM>under development</EM>. Beta-testers
+and developers are sorely needed. I cannot do everything myself, I have
+a day job :). If you are interested and want to help, please contact me.
+My email is all over this pages.
+<BR CLEAR=left><HR>
+
+
+<H2 ALIGN=center><IMG SRC="alert.gif"> <FONT COLOR=red>Newsflash!</FONT> <IMG SRC="alert.gif"></H2>
+
+<P><B>10/20/2005</B>:
+Scarse version 0.4-alpha is out! This is the first new release of Scarse
+Project in a while, and hopefully worth the wait. Profile generation
+algorithm has been almost completely rewritten, and is significantly
+more accurate and robust. New <A HREF="goodies/profiles/">profile
+library</A> is drop-in compatible (and tested) with Photoshop/Adobe ACE.
+The source code has been ported to Windows, and binary Windows
+distribution is available.
+
+<P><HR ALIGN=center WIDTH=15%>
+
+<P>
+If you are using (or planning on using) Scarse, you should subscribe to
+<A HREF="http://lists.sourceforge.net/mailman/listinfo/scarse-announce">
+scarce-announce mailing list</A> so that you don't miss important
+bugfixes and new releases. Older announcements from the list, release
+notes, major bug reports, and even some development rumors all clumped
+together can be found on <A HREF="oldnews.html">this page</A>.
+<HR>
+
+
+<H2 ALIGN=center><FONT COLOR=green>Site Index</FONT></H2>
+
+<UL>
+  <LI>Latest release: 
+    <A HREF="http://download.sourceforge.net/scarse/scarse-0.4-src.tar.gz">Scarse 0.4-alpha</A>;
+  download from <A HREF="http://sourceforge.net/">SourceForge</A> via [
+    <A HREF="http://sourceforge.net/project/showfiles.php?group_id=7892">http</A> |
+    <A HREF="ftp://scarse.sourceforge.net/pub/scarse/">anonymous ftp</A>
+  ]
+  
+  <LI>Release notes: [
+    <A HREF="CREDITS">credits</A> |
+    <A HREF="README">readme</A>
+    (<A HREF="README.french">en français</A>) |
+    <A HREF="INSTALL">installation</A> |
+    <A HREF="CHANGES">change log</A> |
+    <A HREF="TODO">to do list</A>
+  ] -- be sure to read these!
+  
+  <P>
+  <LI>Documentation: [
+    <A HREF="adjust/">Adjusting Your Monitor</A> |
+    <A HREF="howto/">Scarse HOWTO</A> |
+    <A HREF="docs/">Related Docs</A>
+  ]
+  
+  <LI>Images: [
+    <A HREF="images/reference/">Calibration Targets</A> |
+    <A HREF="images/sample/">Scarse Samples</A>
+  ]
+  
+  <LI>Other goodies: [
+    <A HREF="goodies/profiles/">Profile Library</A>
+  ]
+</UL>
+
+<HR>
+
+
+<H2>What is it?</H2>
+
+<P>
+Scarse is a free color calibration and management software package. It
+lets you build and use ICC profiles. Custom profiles can be generated
+from variety of calibration targets. Scarse is intended for (and
+developed on) Unix machines and is distributed under the terms of
+<A HREF="COPYING">GNU Public License</A>.
+
+<P>
+Scarse project was born out of my desire to be able to get good scans
+which are consistent across large batches, and do it with minimal
+amount of manual tweaking. It is intended for serious photographic or
+prepress applications, and is most useful with high-end film scanners.
+If you just want to occasionally scan a snapshot of your aunt on your
+$100 flatbed and don't care about the colors as long as they are
+snappy, don't bother, this package is not for you.
+
+<P>
+As the name implies, color management issues are rarely addressed in
+the free software world, probably because until now good scanner
+hardware was unaffordable to a mere mortal. With all professional
+graphic solutions being firmly locked into Mac or Windows platforms,
+there was hardly anything at all for Unix. However, time marches on,
+desktop scanners and printers got much better and cheaper, some brave
+people wrote <A HREF="http://www.gimp.org/">Gimp</A>, and a color
+management system for Unix was needed. So I set out to write it...
+
+<P>
+Right now, the Scarse is in early development stages, and is not as
+polished as commercial systems are. Indeed, it is quite rough and even
+downright inconvenient in places. However, it is quite functional
+already, and produces transparency scans which are <A
+HREF="images/sample/">superior</A> to what I get from OEM Polaroid
+SprintScan 4000 profiles (using the same hardware). So if you are
+adventurous type, give it a try, and tell me what you think...
+
+
+<H2>How does it work?</H2>
+
+<P>
+It works quite well, thank you :). Oh, you meant technical details :)?
+
+<P>
+Scarse works by comparing the scan of a hardcopy reference calibration
+target (such as IT8.7 or <A HREF="docs/kodak/Q60-tech.pdf">Kodak
+Q60</A>) coming from your hardware to the actual colors the target is
+supposed to have. It then builds (by approximation and interpolation)
+lookup tables that take into account the measured scanner hardware
+peculiarities. Using thus generated profile, you can then get scans
+with color rendition (more or less :) independent of the particular
+hardware used.
+
+<P>
+You will need a supported hardcopy calibration target. Standard IT8.7
+targets are made by most major film manufacturers for the purpose of
+calibrating scanners for their films. They offer a lot of color points
+to measure and thus produce quite precise profiles. Q60 target is <A
+HREF="docs/kodak/Q60-order.pdf">available from Kodak</A> in 35mm and
+4x5 transparency, as well as 5x7 reflective formats.  Wolf Faust makes
+high quality <A HREF="http://www.targets.coloraid.de/">reflective and
+transmissive IT8.7 targets</A> and sells them quite cheaply. Other
+standard calibration targets, such as MacBeth Color Checker and Kodak
+Color Separation Guide Q13 & Q14 (grayscale only), are also supported.
+
+<P>
+You cannot calibrate scanner for negative film the same way you can do
+it with slides, because of the variations in negatives on per-exposure
+basis. Scarse provides automatic color adjustment which will normalize
+scan of a negative to roughly correct levels and contrast, and you can
+work from there. Printing negatives is more of a subjective thing, and
+some decisions are better left to a human.
+
+<P>
+As far as results go, <A HREF="images/sample/">see for yourself</A>,
+and form an opinion.
+
+
+<H2>Who is responsible for it?</H2>
+
+<P>
+Scarse was written and is being maintained by me (Andrei Frolov), with
+help from <A HREF="CREDITS">many other people</A>. As it usually
+happens, it all started as a solution of particular problem I had.
+Besides doing <A HREF="http://www.stanford.edu/~afrolov">theoretical
+physics research</A> as my day job, I am an avid backpacker and nature
+photographer, and I wanted to scan a large number of slides from my
+files. Not satisfied with the services of commercial labs, I decided to
+do it myself, and do it right. Being a firm believer in freedom of
+information, I released the resulting code under GPL. But enough about
+me, let's talk about...
+
+
+<H2>How do I use it?</H2>
+
+<P>
+Where is the documentation, you ask? "I... ugh... sort of... haven't...
+yet..." the author hides his face behind the camera and exits to the
+nearest bushes. "You are on your own!" the wind carries to you from the
+distance...
+
+<P>
+That having been said :), I started writing some docs. My feeble
+efforts in that direction, as well as some related documentation
+from other sources, are indexed <A HREF="docs/">here</A>.
+
+
+<H2>How can I help?</H2>
+
+<P>
+Scarse project is still in early development stages, and could use all
+the help it can get. We need developers, and we need testers even
+more... If you find a bug, please
+<A HREF="http://sourceforge.net/bugs/?func=addbug&group_id=7892">
+report it</A>, including description what went wrong and what were
+you doing at the time. Better yet, fix it yourself and
+<A HREF="http://sourceforge.net/patch/?func=addpatch&group_id=7892">
+submit a patch</A> :). Improvement suggestions and (constructive)
+critique are always welcome. If you feel particularly generous, you can
+also help by donating hardware (especially densitometer or other color
+measurement devices) or money.
+
+
+<H2>Still reading?</H2>
+
+<P>
+Then go on to <A HREF="links.html">digital imaging links</A>...
+
+
+<P><HR>
+<TABLE WIDTH=100%>
+<TR><TD ALIGN=left>
+  <ADDRESS>Andrei Frolov &lt;<A HREF="mailto:frolov@cita.utoronto.ca">frolov@cita.utoronto.ca</A>&gt;</ADDRESS></TD>
+<TD ALIGN=right>
+  [ <A HREF="http://sourceforge.net/project/stats/?group_id=7892&ugn=scarse">stats</A> ]
+</TD></TR></TABLE>
+
+</BODY>
+</HTML>

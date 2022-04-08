@@ -1,0 +1,39 @@
+################################################################
+# Profile library Makefile
+################################################################
+
+SHELL = /bin/sh
+PATH := ../../src:$(PATH)
+@SET_MAKE@
+
+# Programs
+AWK	= @AWK@
+PERL	= @PERL@
+INSTALL = @INSTALL@
+INSTDAT = @INSTALL_DATA@
+
+# Installation dirs
+prefix  	= @prefix@
+exec_prefix	= @exec_prefix@
+
+bindir  	= @bindir@
+libdir  	= @libdir@
+includedir	= @includedir@
+datadir 	= @datadir@/scarse/profiles
+
+
+# Targets
+.PHONY: all clean distclean install
+
+all: profiles.pl
+	$(PERL) $^ > index.html
+
+clean:
+	rm -rf `cat FILES | $(AWK) '{print $$1;}'`
+
+distclean: clean
+	rm -f FILES index.html *.tar.gz *.zip Makefile
+
+install:
+	$(INSTALL) -d $(datadir)
+	for i in spaces/*; do $(INSTDAT) $$i $(datadir)/$${i#spaces/}; done

@@ -1,0 +1,215 @@
+<!-- $Id: oldnews.html,v 1.9 2005/10/20 08:11:05 afrolov Exp $ -->
+<HTML><HEAD><TITLE>Scarse Project News</TITLE></HEAD>
+<BODY BGCOLOR="white" TEXT="black">
+
+<H1>Scarse Project: News and Rumors</H1>
+
+<HR>
+
+<P><TABLE CELLPADDING=5 WIDTH=50%>
+<TR BGCOLOR=gray><TH ALIGN=left>Thursday, 20 October 2005</TH></TR></TABLE>
+<BLOCKQUOTE>
+<H3>Version 0.4-alpha is out!</H3>
+
+<P> This is the first new release of Scarse Project in a while, and
+hopefully worth the wait. Profile generation algorithm has been almost
+completely rewritten, and is significantly more accurate and robust. New
+<A HREF="goodies/profiles/">profile library</A> is drop-in compatible
+(and tested) with Photoshop/Adobe ACE. The source code has been ported
+to Windows, and binary Windows distribution is available.
+</BLOCKQUOTE>
+
+
+<P><TABLE CELLPADDING=5 WIDTH=50%>
+<TR BGCOLOR=gray><TH ALIGN=left>Thursday, 12 April 2001</TH></TR></TABLE>
+<BLOCKQUOTE>
+<H3>Scarse website updates</H3>
+
+<P>Scarse website was updated to include site index for easy access to
+content. Some links were well-hidden before, and things were getting
+confusing... A couple of broken SourceForge links were fixed (they just
+keep moving things around).
+
+<P>Also, I generated a number of generic RGB profiles for convenience
+of other users; they can be downloaded from <A HREF="goodies/profiles/">
+profile library</A>. Maybe these should be included in the next Scarse
+distribution?
+</BLOCKQUOTE>
+
+
+<P><TABLE CELLPADDING=5 WIDTH=50%>
+<TR BGCOLOR=gray><TH ALIGN=left>Monday, 19 March 2001</TH></TR></TABLE>
+<BLOCKQUOTE>
+<H3>Two known bugs in 0.3...</H3>
+
+<P>A number of people have reported two bugs present in Scarse
+0.3-alpha. They will be dealt with in the next release; in the
+meantime, download fixes from
+<A HREF="http://sourceforge.net/patch/?group_id=7892">patch manager</A>,
+if you have not done so already.
+
+<P>In other news, I've started developing version 0.4. My main effort
+right now goes into work on profile generation algorithm. I am getting
+rid of interpolation routines (which have proven themselves incurably
+flaky), and replacing them with model fitting. The work goes slowly
+however, as I don't have much time to spare nowadays...
+</BLOCKQUOTE>
+
+
+<P><TABLE CELLPADDING=5 WIDTH=50%>
+<TR BGCOLOR=gray><TH ALIGN=left>Wednesday, 20 September 2000</TH></TR></TABLE>
+<BLOCKQUOTE>
+<H3>Version 0.3-alpha released!</H3>
+
+<P>This is a major new release of Scarse. A lot of new functionality,
+and internals have undergone extensive changes. New image IO wrapper
+library supports reading both TIFF and PPM, and adding other formats is
+much less complicated now. Color adjustment has been added to cmap,
+with automatic algorithm to handle negative film. Calibrate has been
+almost completely rewritten to allow for more flexible calibration data
+handling. Accuracy of ipb profile generation algorithm is significantly
+improved, especially in the shadows. Profiles now should be completely
+interchangeable with other CMS software.
+
+<P>This release took somewhat longer to finish than I expected, but I
+kept finding things that needed to be done :). In the end, the release
+was still a bit rushed (I'm moving to a different city next week), but
+I hope not too many bugs slipped through...
+</BLOCKQUOTE>
+
+
+<P><TABLE CELLPADDING=5 WIDTH=50%>
+<TR BGCOLOR=gray><TH ALIGN=left>Tuesday, 01 August 2000</TH></TR></TABLE>
+<BLOCKQUOTE>
+<H3>www.scarse.org is up</H3>
+
+<P>Update your bookmarks! New homepage of Scarse project at
+<A HREF="http://www.scarse.org">www.scarse.org</A> is finally up and
+running. You will be redirected to new pages if you visit the old pages
+at ohm.phys.ualberta.ca, as the old pages will be taken offline soon. 
+</BLOCKQUOTE>
+
+
+<P><TABLE CELLPADDING=5 WIDTH=50%>
+<TR BGCOLOR=gray><TH ALIGN=left>Sunday, 09 July 2000</TH></TR></TABLE>
+<BLOCKQUOTE>
+<H3>Scarse is coming to SourceForge</H3>
+
+<P>Scarse project is coming out of the closet! After almost a year of
+hiding in the shadows of <A HREF="http://ohm.phys.ualberta.ca/photo/">
+my personal web pages</A>, it is going to bravely show itself to a
+wider online audience. Please be gentle :)...
+
+<P>Scarse is getting set up at <A HREF="http://www.sourceforge.net">
+SourceForge</A>, and if everything works out well, will be hosted there
+permanently. We also got our own domain name now (scarse.org), and will
+be setting it up shortly (unless we run into unexpected difficulties,
+as it often happens :).
+</BLOCKQUOTE>
+
+
+<P><TABLE CELLPADDING=5 WIDTH=50%>
+<TR BGCOLOR=gray><TH ALIGN=left>Thursday, 06 July 2000</TH></TR></TABLE>
+<BLOCKQUOTE>
+<H3>Icclib bug found!</H3>
+
+<P>Nasty bug in icclib found and fixed. All version 0.2-alpha users should
+<A HREF="http://download.sourceforge.net/scarse/icclib-1.21-bugfix.gz">
+patch their icclib</A> now, rather than wait for release 0.3. The bug
+affects both accuracy and speed of reverse curve lookups.
+</BLOCKQUOTE>
+
+
+<P><TABLE CELLPADDING=5 WIDTH=50%>
+<TR BGCOLOR=gray><TH ALIGN=left>Friday, 30 June 2000</TH></TR></TABLE>
+<BLOCKQUOTE>
+<H3>Version 0.3 is in the works...</H3>
+
+<P>Since I'm working on my PhD thesis right now, things are moving a
+little bit slow. But the release 0.3 is not too far off in the future.
+I've put a lot of work into optimizing profile generation algorithms,
+and did a major rewrite of some internals. The 0.3 is going to be good
+:)...
+
+<P>In other news, there's talk about GUI... Pixel Fairy said he'd give
+it a go once command line interface is frozen in 0.3. So maybe in
+0.4... But, as usual, don't hold your breath :).
+</BLOCKQUOTE>
+
+
+<P><TABLE CELLPADDING=5 WIDTH=50%>
+<TR BGCOLOR=gray><TH ALIGN=left>Wednesday, 03 November 1999</TH></TR></TABLE>
+<BLOCKQUOTE>
+<H3>Version 0.2-alpha released!</H3>
+
+<P>This release offers more supported calibration targets, improved
+performance and various bugfixes over 0.1-alpha. The main difference,
+though, is better color correction algorithm. It turned out that
+multidimensional interpolation routines in 0.1 did not work as well as
+advertised :). They were too stiff and either overshot horribly or
+didn't do anything useful at all. Fancy variational methods my behind!
+Replaced by proletarian linear simplex interpolation, which actually
+works well for our data. Also, we now calculate matrix transform to
+best-fit calibration data before doing interpolation. As a result of
+these measures, saturation is brought under control, something 0.1 left
+to hardware to decide upon. We are actually at the point when you can
+scan Q60 on Polaroid SprintScan 4000 and el-cheapo HP Photosmart, run
+them through Scarse profiles, and overall colors will look almost
+identical!
+
+<P>Also, release 0.2 does away with code inherited from certain
+well-known book on numerical methods, which will remain unnamed.
+Apparently, authors do not want anybody actually <I>using</I> their
+code. Heaven forbid! Whether evil or just misguided in their licensing
+policies, it's their decision to make, so numerics in Scarse have
+undergone a rewrite. Hopefully, not too many new bugs were
+introduced...
+</BLOCKQUOTE>
+
+
+<P><TABLE CELLPADDING=5 WIDTH=50%>
+<TR BGCOLOR=gray><TH ALIGN=left>Saturday, 23 October 1999</TH></TR></TABLE>
+<BLOCKQUOTE>
+<H3>First bugs found!</H3>
+
+<P>No software release goes out without bugs. Scarse is no exception.
+Two bugs, one minor and one major, were discovered by John Pitney.
+Thanks!
+
+<P>The first bug is a TIFF byteorder issue for 16 bit/channel data. If
+your only use files coming from your machine, or 8 bit/channel data,
+this won't affect you.
+
+<P>The major bummer is that ipb v0.1 chokes on degenerate data, such as
+when highlights are blown out by the scanner or shadows are blocked. If
+you encounter problems like "ipb: Bad input to interp_1d()", or run
+into floating point exceptions, this is probably the cause. Email me
+and I will send you a quick fix patch.
+
+<P>Both bugs will be fixed in release 0.2-alpha, which is currently in
+the works. It will also offer improved profile generation (currently
+saturation is a bit low), and some new features. But don't hold your
+breath...
+</BLOCKQUOTE>
+
+
+<P><TABLE CELLPADDING=5 WIDTH=50%>
+<TR BGCOLOR=gray><TH ALIGN=left>Saturday, 02 October 1999</TH></TR></TABLE>
+<BLOCKQUOTE>
+<H3>Version 0.1-alpha released!</H3>
+
+<P>The first public release of Scarse is out. Main functionality is in
+place. Interface could use some work, most notably we need a GUI
+frontend. Translation through ICC profiles is working. ICC profile
+builder is working for profiles we need to calibrate scanner and
+display. Scanner calibration for transparency or reflective media is
+working. Generic display profiles work. The rest needs more work.
+Enjoy!
+</BLOCKQUOTE>
+
+
+<P ALIGN=center>[ Back to <A HREF="./">Scarse Project Homepage</A> ]<HR>
+<ADDRESS>Andrei Frolov &lt;<A HREF="mailto:frolov@cita.utoronto.ca">frolov@cita.utoronto.ca</A>&gt;</ADDRESS>
+
+</BODY>
+</HTML>

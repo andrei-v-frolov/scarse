@@ -1,0 +1,243 @@
+Scarse (Scanner CAlibration ReaSonably Easy) -- readme
+========================================================
+
+Qu'est-ce ?
+===========
+
+Scarse est un logiciel gratuit de calibrage et de gestion de couleurs,
+il permet de créer et d'utiliser des profiles ICC. Des profiles
+spécifiques peuvent être générés à partir d'une grande variété de
+"mires/targets" de calibrage. Le Projet SCARSE a été développé et est à
+destination des machines UNIX. Il est distribué sous les termes des
+licences publiques de GNU. (voir le fichier Copyrights)
+
+Le projet est né de mon désir de pouvoir obtenir de manière systématique
+des scans homogènes tout en minimisant les ajustements manuels. Ce
+projet est destiné aux photographes de même qu'aux applications
+pre-presse et est particulièrement adapté aux utilisateurs de Scanners
+haut de gamme. Si vous ne voulez qu'occasionnellement scanner un
+instantané de votre tante sur votre scanner à plat à 100$ et ne vous
+vous souciiez pas trop des couleurs tant qu'elles sont "correctes" alors
+ce package logiciel n'est pas pour vous.
+
+Comme son nom l'implique, les problèmes de gestion de la couleur sont
+rarement résolus dans le monde du logiciel libre, essentiellement à
+cause du prix inaccessible des " bons " scanners pour un utilisateur
+lambda. Sachant que la grande majorité des professionnels sont fermement
+attachés à la plate-forme MAC ou Windows, il n'y avait donc pas grand
+chose pour le monde UNIX.Cependant, le temps aidant...  les scanners et
+imprimantes de bureaux sont devenues de plus en plus abordables. De bien
+braves personnes on écrit Gimp et de ce fait un système de gestion des
+couleurs était nécessaire pour les machines Unix. C'est pourquoi je me
+suis mis à écrire ce package logiciel.
+
+Pour l'instant le projet SCARSE en en phase de développement avancé et
+par conséquent n'est pas aussi "finalisé" qu'un produit commercial.
+Cependant le package est plutôt fonctionnel, et permet d'obtenir des
+scans de qualité bien supérieure à ce que j'obtiens des profiles
+standards livrés avec mon Sprint Scan 4000. Alors si vous êtes
+aventurier, essayez-le, et dites moi ce que vous en pensez...
+
+Ce que SCARSE n'est pas :
+========================
+Scarse n'est rien de tout ce qui suit :
+
+  * Un driver d'imprimante ou de scanner: 
+     SCARSE ne connait rien à propos de votre scanner ou de vôtre
+     imprimante. Il s'appuie sur les drivers externes pour scanner et
+     imprimer.  Si vous cherchez un driver de scanner, vous avez besoin
+     de SANE. 
+
+  * Un programme de manipulation d'images 
+     SCARSE ne connaît rien de l'image à proprement parler. Il manipule
+     simplement les couleurs de manière à ce qu'elles apparaissent
+     correctement sur vos équipements.  Si vous avez besoin de retoucher
+     des images ou d'appliquer des filtres, vous avez besoin de GIMP.  
+
+  * Un Moteur ICC 
+     SCARSE n'est pas un Moteur ICC. Il construit à partir de la
+     librairie icclib, qui lui est un moteur Icc.  SCARSE est un système
+     de gestion de couleur, ce qui signifie qu'il vous autorise la
+     création de profiles pour votre configuration matérielle. 
+
+  * Rapide 
+     La rapidité n'a jamais été un objectif dans le développement de cet
+     outil.   La précision dans la translation des couleurs est la
+     priorité.  SCARSE utilise des nombres au format "double" pour la
+     représentation des couleurs internes, ce qui donne 52 bits/couleur,
+     par opposition aux 8 ou 16bits/couleur que l'on voit habituellement
+     dans les représentations avec des entiers.  L'utilisation des
+     nombres doubles élimine les erreurs de "discrétisation", mais à
+     pour effet de tourner assez lentement (enfin, ce n'est pas une
+     limace non plus !)  
+
+Comment cela fonctionne t'il?
+=============================
+
+Il fonctionne assez bien .... merci 8-). Comment ?
+
+Scarse travaille en comparant le scan d'une mire de calibrage de
+référence (ex. Mire IT8.7 ou Kodak Q60) venant de votre scanner avec les
+couleurs que la mire est sensée avoir. Il construit ensuite (par
+approximation et interpolation) la "Look-up table" qui prend en compte
+les particularités de votre scanner. En utilisant le profile généré,
+vous pouvez obtenir des scans avec un rendu de couleur indépendant du
+matériel utilisé (Scanner).
+
+Pour ce faire, vous aurez besoin d'une mire de calibrage. Les mires
+IT8.7 sont les plus utilisées par les manufacturiers de films (pour le
+calibrage des scanners pour les films). Ces mires offrent de nombreux
+points de couleur à mesurer et par conséquent produisent des profiles
+assez précis. Les mires de type Q60 sont disponibles chez Kodak en
+différents formats (35mm - 4x5. Wolf Faust créé des mires de type IT8.7
+sur papier FUJI qui sont vendues assez peu cher. D'autres standards sont
+supportés (MacBeth colorchecker - Kodak Color Separation guide Q13 et Q14).
+
+Vous ne pouvez pas calibrer un scanner avec un film négatif de la même
+manière que pour des diapositives, à cause le la variation de
+l'exposition entre les différents clichés. SCARSE fournit un système de
+normalisation de la couleur qui permettra de supporter les négatifs.
+L'impression de négatifs est plus que subjective et il est plus prudent
+de laisser certaines décisions à l'homme.
+
+Ou le trouver ?
+===============
+
+La dernière version est disponible sur la page d'accueil de SCARSE:
+
+	http://www.scarse.org/
+
+Vous pouvez contacter l'auteur (c'est moi) par mail à l'adresse suivante :
+(Ecrivez-moi en anglais.)
+	Andrei Frolov <frolov@cita.utoronto.ca>
+
+Qu'y a t'il dedans ?
+====================
+
+Inclus dans cette distribution :
+	
+	CHANGES		- Log des changements
+	COPYING		- GNU Public Licence
+	CREDITS		- personnes ayant contribuées au développement.
+	INSTALL		- Notes sur l'installation
+	README		- Ce fichier
+	TODO		- Liste des choses à faire
+	configure	- Script de configuration automatique	
+	icclib/		- icclib & exemples de Graeme W. Gill
+	lib/		- librairies essentiellement GNU
+	data/		- Données sur le format des mires de calibrage
+	src/		- Code Source de SCARSE incluant :
+	 ipb		 Générateur de profile Icc 
+	 calibrate	 Utilitaire de calibrage des équipements (input/output)
+	 cmap		 Utilitaire de transformation d'une image en utilisant un profile.
+
+Comment Compiler / installer et utiliser SCARSE ?
+================================
+
+Les notes d'installation disent en bref :
+
+	./configure && make && make install
+
+Dans le répertoire Racine. Cette commande installera les fichiers
+" binaires " de scarse ainsi que les profiles standards RGB. Par défaut
+la librairie icclib est compilée en direct comme un objet pour des
+raisons de performances et de portabilité. Si vous avez un compilateur C
+(intel), " configure " l'utilisera avec des options d'optimisation
+agressives ce qui génère des codes gcc sensiblement plus rapides. Si
+vous avez upx, les " binaires " seront empaquetés durant l'installation.
+
+De même que pour l'utilisation de SCARSE, je n'ai pas écrit de documents
+de type " man ", alors vous êtes tout seul... Je considère que vous
+savez ce que vous faites et que vous n'êtes pas effrayé de lire le code
+source du programme : -). C'est pourquoi je donnerai quelques exemples
+de ce que vous pouvez faire avec ce " package logiciel "  Il est
+important de noter que tous les outils afficheront un résumé de leur
+mode de fonctionnement ainsi que la liste des options possible en
+invoquant l'option  '-h '. Pour créer un profile de scanner:
+
+Scanner la mire de calibrage avec le nombre maximum de profondeur de
+couleur (16bit si possible) et sauvegarder le résultat sous un fichier
+Tiff. Ouvrir ce fichier dans un éditeur recouper cette mire de manière à
+ce que les coins de la mire deviennent les coins de l'image (ceci vous
+évitera de faire des calculs !!!!!). Si cette explication n'est pas
+assez claire, veuillez vous référer à la Home-page de SCARSE). Cette
+étape est très importante car l'outil de calibrage doit aligner la
+grille des patchs de couleur, sans quoi cela produira des erreurs dans
+la lecture des couleurs.
+
+Ensuite tapez  quelque chose comme :
+
+Mire non découpée : ( A vous de calculer les ratios)
+     calibrate -v -d scanner -tQ60E3 -b1998:08 -g 90x80+5+10 -i file.tif scanner.icm 
+
+Mire découpée
+     calibrate -v -d scanner -tQ60E3 -b1998:08 -g 100x100+0+0 -i file.tif scanner.icm 
+
+     Si la fonction calibrate retourne quelque chose comme "fluctuation
+     too big", soit votre scan est mauvais, soit la grille des patchs
+     n'est pas alignée. 
+
+Pour Créer un profil d'écran :
+     Le calibrage des écrans n'est pas encore supporté (et nécessite une
+     sonde... Cependant, vous pouvez facilement créer un profile
+     générique en lançant une commande du genre :
+          ipb -v -c display -iRGB:2.5 -p Trinitron -p D50 -M display.icm  
+
+Espace de travail vs affichage:
+     Les espaces de couleur RGB basés sur les écrans ont des gammes de
+     couleurs assez pauvres. Si votre objectif est de créer des
+     documents pour la presse ou faire des archives de vos photos, vous
+     souhaiterez travailler avec d'autres espaces de couleurs. L'espace
+     de couleur LAB à la plus large gamme de couleurs, mais n'est pas
+     supporté par GIMP !. Wide Gamut RGB ou Adobe RGB pourraient être
+     des choix viables. Dans tous les cas, les profiles peuvent être
+     créés en choisissant l'espace approprié en utilisant l'option -p
+     avec ipb.
+          ipb -v -c display -p Adobe -M Adobe.icm
+
+Créer un profile générique:
+     Le créateur de profile ICC (Ipb) peut créer des profiles en
+     connectant divers espaces de couleurs, génériques ou spécifiques
+     pour s'adapter aux données mesurées. Par exemple, pour créer un
+     profile générique XYZ vers LAB taper :
+          ipb -v -c abstract -iXYZ -oLab XYZ2Lab.icm
+
+Utiliser les profiles créés :
+     Utilser Cmap pour transformer l'image par un profile, et stocker le
+     résultat dans une image TIFF. Vous pouvez aussi contrôler la
+     manière dont est stockée l'image (se référer aux options Cmap pour
+     plus de détails). L'utilisation classique pour des scans de diapos
+     serait : 
+          cmap -v -p scanner.icm -r display.icm raw.tif calibrated.tif
+
+Gestion des scans de négatifs:
+     On ne peut calibrer un scanner à partir de négatifs de la même
+     façon que pour des diapos, à cause de la grande différence de
+     variation d'exposition entre deux négatifs. Pour contourner ce
+     problème, un algorithme d'ajustement des couleurs a été incorporé à
+     cmap. On peut l'utiliser de la manière suivante :
+          cmap -v -ALg raw.tif corrected.tif  
+
+La correction automatique ramène l'image dans les " clous ", on peut
+ensuite corriger manuellement les courbes de niveaux  (voir l'aide de
+cmap). Certains films (essentiellement les films à 4 couches comme les
+fuji NPS) semblent avoir besoin d'un traitement plus agressif par canal
+de couleur que ce qui est rendu par la commande -ALG
+
+Que faire s'il y a un bug ?
+===========================
+
+Que voulez vous dire par bug ????? C'est une fonctionnalité !!!)
+Sérieusement, comme cet outil est en version alpha, et par conséquent
+pas testé de manière intensive, il est sensé de penser qu'il y aura des
+bugs. (Beaucoup de bugs). Si vous en trouvez un, reportez-le-moi (en
+anglais s'il vous plait), en décrivant au maximum ce q'il s'est passé ...
+Ou vous pouvez aussi m'envoyer directement le patch de correction ! 
+Je suis aussi à l'écoute des suggestions et des critiques constructives.
+
+Si vous voulez contribuer à ce projet, n'hésitez pas !
+
+C'est tout pour l'instant.
+
+Texte original : Andrei Frolov frolov@cita.utoronto.ca
+Traduction : Gilles Xiberras   gilles.xiberras@webmerch.zzn.com

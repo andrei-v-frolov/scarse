@@ -1,0 +1,50 @@
+<!-- $Id: geometry.html,v 1.2 2005/10/20 06:14:42 afrolov Exp $ -->
+<HTML><HEAD><TITLE>Geometry Specification</TITLE></HEAD>
+<BODY BGCOLOR=white TEXT=black>
+
+<H1>Scarse Project: How To...: Geometry Specification for Test Targets</H1>
+
+<HR>
+
+<P>
+Scarse builds calibration profiles for your scanner by comparing actual
+raw scan of the test target with the colors it is supposed to have. To
+do that, it has to know where same-color patches are located on the
+scan. Typically, they are arranged on a rectangular grid. But the grid
+size and position in the scan is not fixed, as image area can be
+shifted and cropped. So, you must tell Scarse where the grid is on your
+particular scan. You do this by specifying grid <I>geometry</I> (like
+in X), not in pixels, but in percent of the total image dimensions
+(this is to make translation to different resolution scan easier). Here
+is an example:
+
+
+<H3 ALIGN=center>Q60 calibration target</H3>
+
+<P ALIGN=center><IMG WIDTH=482 HEIGHT=324 SRC="q60-geom.jpg" ALT="Q60E3 target">
+
+<P>
+Above is a scan of Kodak Q60E3 calibration target, with grid corners
+marked by bright red triangles (other Q60 targets are exactly like
+Q60E3). The grid takes up 84.2% of the width and 84.1% of the height of
+the scan, and is offset by 8.8% from the left and by 5.1% from the top.
+So the full geometry specification for the above scan is
+<PRE>
+	-g 84.2x84.1+8.8+5.1
+</PRE>
+You should find corners in <I>your</I> scan and work out numbers in a
+similar way. Or just crop the image to the corners, and say
+<PRE>
+	-g 100x100+0+0
+</PRE>
+
+<P>
+Eventually, when the GUI frontend is written, this boring step will be
+made automatic. But for now, you have to suffer...
+
+
+<P ALIGN=center>[ Back to <A HREF="./">Scarse Howto</A> | <A HREF="../">Scarse Project Homepage</A> ]<HR>
+<ADDRESS>Andrei Frolov &lt;<A HREF="mailto:frolov@cita.utoronto.ca">frolov@cita.utoronto.ca</A>&gt;</ADDRESS>
+
+</BODY>
+</HTML>
